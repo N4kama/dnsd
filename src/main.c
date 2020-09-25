@@ -1,9 +1,10 @@
 #include <stdio.h>
 
-int main(int argc, char *argv[])
+int main(void) // int argc, char *argv[]) 
 {
     // TODO: Parse config file
 
+    printf("Starting DNS server\n");
     // TODO: Start server
 
     return 0;
