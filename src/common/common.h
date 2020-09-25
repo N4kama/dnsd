@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#define __packed __attribute__((__packed__))
 
 #define TYPE_A      1
 #define TYPE_NS     2
@@ -26,7 +27,7 @@ struct header
     uint16_t    ancount;
     uint16_t    nscount;
     uint16_t    arcount;
-} packed
+}__packed;
 
 #endif
 
