@@ -5,6 +5,7 @@
 
 #define __packed __attribute__((__packed__))
 
+// Macros for QTYPE
 #define TYPE_A      1
 #define TYPE_NS     2
 #define TYPE_CNAME  5
@@ -28,6 +29,14 @@ struct header
     uint16_t    nscount;
     uint16_t    arcount;
 }__packed;
+
+struct question
+{
+    char *qname;
+    uint16_t qtype;
+    uint16_t qclass;
+}__packed;
+
 
 #endif
 
