@@ -37,6 +37,20 @@ struct question
     uint16_t qclass;
 }__packed;
 
+struct rr
+{
+    char        *name;
+    uint16_t    type;
+    uint16_t    clss;
+    uint32_t    ttl;
+    uint16_t    rdlength;
+
+    /*
+     * Since the format of this changes depending on the TYPE, we might
+     *  want to define a struct for rdata
+     */
+    char        *rdata;
+}__packed;
 
 #endif
 
