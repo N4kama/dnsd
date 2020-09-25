@@ -32,9 +32,9 @@ struct header
 
 struct question
 {
-    char *qname;
-    uint16_t qtype;
-    uint16_t qclass;
+    char        *qname;
+    uint16_t    qtype;
+    uint16_t    qclass;
 }__packed;
 
 struct rr
