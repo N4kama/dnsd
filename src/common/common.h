@@ -52,6 +52,15 @@ struct rr
     char        *rdata;
 }__packed;
 
+struct message
+{
+    struct      header header;
+    struct      question question;
+    struct      rr answer;
+    struct      rr authority;
+    struct      rr additional;
+}__packed;
+
 #endif
 
 // Structures shared by mutliple modules
