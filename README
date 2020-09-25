@@ -22,8 +22,12 @@
 
     II. Installation
 
-    `make install`
+    `$ make`
 
     III. Usage
 
-    ./dnsd <PATH_TO_ZONE_FILE>
+    `$ ./dnsd <PATH_TO_ZONE_FILE>`
+
+    IV. Uninstall
+
+    `$ make clean`
