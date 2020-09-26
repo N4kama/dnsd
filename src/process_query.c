@@ -61,13 +61,13 @@ void response_handle(message *m, zone_array *zones)
     if (zone == NULL)
         m->header.rcode = RCODE_REFUSED;
 
-    else if (zone->type == m->question.type)
+    else if (zone->type == m->question->qtype)
     {
         m->header.rcode = RCODE_NO_ERROR;
         m->answer = malloc(sizeof(resource_record));
-        m->answer->name = m->question.qname;
-        m->answer->type = m->question.qtype;
-        m->answer->clss = m->question.qclass;
+        m->answer->name = m->question->qname;
+        m->answer->type = m->question->qtype;
+        m->answer->clss = m->question->qclass;
         //m->answer->ttl = ; //FIXME
         //m->answer->rdlength = ; //FIXME
         //m->answer->rdata = ; //FIXME
@@ -78,9 +78,9 @@ void response_handle(message *m, zone_array *zones)
         m->header.rcode = RCODE_NO_ERROR; // RCODE_NO_ERROR si nom présent mais type absent
                                           // RCODE_NXDOMAIN si nom non-existant
         m->authority = malloc(sizeof(resource_record));
-        m->authority->name = m->question.qname;
-        m->authority->type = m->question.qtype;
-        m->authority->clss = m->question.qclass;
+        m->authority->name = m->question->qname;
+        m->authority->type = m->question->qtype;
+        m->authority->clss = m->question->qclass;
         //m->authority->ttl = ; //FIXME
         //m->authority->rdlength = ; //FIXME
         //m->authority->rdata = ; //FIXME
