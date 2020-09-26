@@ -1,17 +1,25 @@
 #include <stdio.h>
 
+#include "error.h"
 #include "zone_file_parser.h"
 
 int main(void) // int argc, char *argv[]) 
 {
-    zone_array *zones;
+    dnsd_err code;
 
-    zones = zone_parse("samples/dnsd.zonefile");
+    zone_array *zones;
+    code = zone_parse("samples/dnsd.zone", &zones);
+    if (code != ERR_OK)
+    {
+        printf("zone_parse failed with: %s\n", dnsd_strerror(code));
+        return code;
+    }
+
     zone_print(zones);
 
     printf("Starting DNS server\n");
 
     zone_free(zones);
 
-    return 0;
+    return code;
 }

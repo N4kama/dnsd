@@ -35,11 +35,20 @@ uint16_t str2type(char *str)
     return 0;
 }
 
-zone_array *zone_parse(char *filename)
+dnsd_err zone_parse(char *filename, zone_array **zones)
 {
     FILE *file = fopen(filename, "r");
     if (file == NULL)
-        return NULL; // failed to open file
+        return ERR_NOENT;
+    
+    *zones = malloc(sizeof(zone_array));
+    if (*zones == NULL)
+    {
+        fclose(file);
+        return ERR_NOMEM;
+    }
+    (*zones)->count = 0;
+    (*zones)->array = NULL;
 
     fseek(file, 0, SEEK_END);
     uint64_t file_size = ftell(file);
@@ -47,37 +56,27 @@ zone_array *zone_parse(char *filename)
     if (file_size == 0)
     {
         fclose(file);
-        return NULL; // empty file
+        return ERR_OK;
     }
 
     char *file_content = malloc(file_size + 1);
     if (file_content == NULL)
     {
         fclose(file);
-        return NULL; // malloc failed
+        return ERR_NOMEM;
     }
 
     uint64_t count = fread(file_content, sizeof(char), file_size, file);
     file_content[count] = 0;
 
     uint32_t line_count = strcount(file_content, '\n');
-
-    zone_array *zones = malloc(sizeof(zone_array));
-    if (zones == NULL)
+    (*zones)->array = malloc(line_count * sizeof(zone));
+    if ((*zones)->array == NULL)
     {
+        zone_free(*zones);
         free(file_content);
         fclose(file);
-        return NULL; // malloc failed
-    }
-
-    zones->count = 0;
-    zones->array = malloc(line_count * sizeof(zone));
-    if (zones->array == NULL)
-    {
-        zone_free(zones);
-        free(file_content);
-        fclose(file);
-        return NULL; // malloc failed
+        return ERR_NOMEM;
     }
 
     char *cursor = file_content;
@@ -90,58 +89,58 @@ zone_array *zone_parse(char *filename)
 
         if (strcount(cursor, ';') != 3)
         {
-            zone_free(zones);
+            zone_free(*zones);
             free(file_content);
             fclose(file);
-            return NULL; // less / more than 4 values
+            return ERR_PARSE_BADCNT;
         }
 
         // parse name
         char *value_end = strechr(cursor, ';');
         *value_end = 0;
-        zones->array[i].name = malloc(value_end - cursor + 1);
-        if (zones->array[i].name == NULL)
+        (*zones)->array[i].name = malloc(value_end - cursor + 1);
+        if ((*zones)->array[i].name == NULL)
         {
-            zone_free(zones);
+            zone_free(*zones);
             free(file_content);
             fclose(file);
-            return NULL; // malloc failed
+            return ERR_NOMEM;
         }
-        strcpy(zones->array[i].name, cursor);
+        strcpy((*zones)->array[i].name, cursor);
         cursor = value_end + 1;
 
         // parse type
         value_end = strechr(cursor, ';');
         *value_end = 0;
-        zones->array[i].type = str2type(cursor);
+        (*zones)->array[i].type = str2type(cursor);
         cursor = value_end + 1;
 
         // parse TTL
         value_end = strechr(cursor, ';');
         *value_end = 0;
-        zones->array[i].ttl = atoi(cursor);
+        (*zones)->array[i].ttl = atoi(cursor);
         cursor = value_end + 1;
 
         // parse content
-        zones->array[i].content = malloc(endl - cursor + 1);
-        if (zones->array[i].content == NULL)
+        (*zones)->array[i].content = malloc(endl - cursor + 1);
+        if ((*zones)->array[i].content == NULL)
         {
-            free(zones->array[i].name);
-            zone_free(zones);
+            free((*zones)->array[i].name);
+            zone_free(*zones);
             free(file_content);
             fclose(file);
-            return NULL; // malloc failed
+            return ERR_NOMEM;
         }
-        strcpy(zones->array[i].content, cursor);
+        strcpy((*zones)->array[i].content, cursor);
         cursor = endl + 1;
 
-        zones->count++;
+        (*zones)->count++;
     }
 
     free(file_content);
     fclose(file);
 
-    return zones;
+    return ERR_OK;
 }
 
 void zone_free(zone_array *zones)
@@ -160,11 +159,7 @@ void zone_print(zone_array *zones)
     if (zones != NULL)
     {
         for (uint32_t i = 0; i < zones->count; i++)
-            printf("zone %u:\n"
-                   "\tname: '%s'\n"
-                   "\ttype: %u\n"
-                   "\tTTL: %u\n"
-                   "\tcontent: '%s'\n",
+            printf("%02u: name=%-32s\ttype=%04u\tTTL=%08u\tcontent=%-64s\n",
                    i,
                    zones->array[i].name,
                    zones->array[i].type,

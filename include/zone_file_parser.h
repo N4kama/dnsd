@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "common.h"
+#include "error.h"
 
 typedef struct {
     char        *name;
@@ -20,9 +21,9 @@ typedef struct {
     zone        *array;
 } zone_array;
 
-zone_array      *zone_parse(char *filename);
-void            zone_free(zone_array *zones);
-void            zone_print(zone_array *zones);
+dnsd_err    zone_parse(char *filename, zone_array **zones);
+void        zone_free(zone_array *zones);
+void        zone_print(zone_array *zones);
 
 #endif
 
