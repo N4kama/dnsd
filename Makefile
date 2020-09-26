@@ -7,6 +7,10 @@ SRC = src/common.c \
 	  src/process_query.c \
 	  src/server.c \
 	  src/signal_handler.c \
+      src/option_parser/option_parser.c \
+      src/option_parser/options_cmd.c \
+      src/option_parser/options.c
+
 
 OBJ = $(SRC:.c=.o)
 
