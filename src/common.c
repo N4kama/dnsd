@@ -56,7 +56,6 @@ int parse_message(char *buffer, message *msg)
     char *content;
     header *head = (header *)buffer;
 
-    display_header(head);
     q = calloc(head->qdcount, sizeof(question));
     if (q == NULL)
         return ERR_NOMEM;
@@ -76,7 +75,6 @@ int parse_message(char *buffer, message *msg)
         q[i].qclass = *(uint16_t *)content;
     }
 
-    display_question(q);
 
     an = calloc(head->ancount, sizeof(resource_record));
     if (an == NULL)
