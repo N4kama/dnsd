@@ -123,3 +123,30 @@ char* message_to_raw(message m)
     (void) m;
     return NULL;
 }
+
+char *string_to_qname(char *s)
+{
+    char *qname = NULL;
+    size_t i;
+    size_t j;
+    size_t total_length = 0;
+    char label_length = 0;
+
+    for (i = 0; s[i]; i++)
+    {
+        if (s[i] != '.')
+        {
+            label_length++;
+        }
+        else
+        {
+            qname = realloc(qname, sizeof(char) * label_length + 1);
+            qname[i - label_length] = label_length;
+            for (j = i - label_length; j < i; j++)
+                qname[j + 1] = s[j];
+            label_length = 0;
+        }
+        total_length++;
+    }
+    return qname;
+}

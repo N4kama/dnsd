@@ -66,6 +66,7 @@ message parse_message(char *buffer);
 char* message_to_raw(message m);
 void free_message(message m);
 char *qname_to_string(char *qname);
+char *string_to_qname(char *s);
 
 #endif
 
