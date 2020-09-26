@@ -24,11 +24,18 @@ void display_header(header *h)
     printf("arcount: %d\n", ntohs(h->arcount));
 }
 
+// Displays a single question
 void display_question(question *q)
 {
-    printf("qname: %p\n", q->qname);
-    printf("%d\n", ntohs(q->qtype));
-    printf("%d\n", ntohs(q->qclass));
+
+    char *name = qname_to_string(q->qname);
+
+    printf("qname: %s\n", q->qname);
+    printf("printable name: %s\n", name);
+    printf("qtype: %d\n", ntohs(q->qtype));
+    printf("qclass: %d\n", ntohs(q->qclass));
+
+    free(name);
 }
 
 
@@ -36,13 +43,25 @@ void display_question(question *q)
 message parse_message(char *buffer)
 {
     message msg;
-    question *q;
+    question *q = NULL;
+    char *content;
     header *head = (header *)buffer;
 
     display_header(head);
+    q = calloc(head->qdcount, sizeof(question));
 
-    //TODO clean this up
-    q = (question *)(buffer + sizeof(header));
+    content = (buffer + sizeof(header));
+
+    // Clean this up
+    for (int i = 0; i < head->qdcount; i++)
+    {
+        q[i].qname = calloc(strlen(content), sizeof(char));
+        strncpy(q[i].qname, content, strlen(content));
+        content += strlen(content) + 1;
+        q[i].qtype = *(uint16_t *)content;
+        content = (char *)((uint16_t *)content) + 1;
+        q[i].qclass = *(uint16_t *)content;
+    }
 
     display_question(q);
 
