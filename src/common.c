@@ -171,10 +171,29 @@ char *qname_to_string(char *qname)
  * Free a mesaage m
  * @param m The message to free
  */
+void free_rr(resource_record *rr, size_t nrecords)
+{
+    size_t i = 0;
+    for (i = 0; i < nrecords; i++)
+    {
+        free(rr[i].name);
+        free(rr[i].rdata);
+    }
+    free(rr);
+}
+
 void free_message(message m)
 {
-    //FIXME
-    (void) m;
+    size_t i;
+    for (i = 0; i < m.header.qdcount; i++)
+    {
+        free(m.question[i].qname);
+    }
+    free(m.question);
+
+    free_rr(m.answer, m.header.ancount);
+    free_rr(m.authority, m.header.nscount);
+    free_rr(m.additional, m.header.arcount);
     return;
 }
 
