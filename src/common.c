@@ -5,8 +5,14 @@
 
 #include "common.h"
 
+//FIXME Main issue with this code right now is it assumes that all the
+// strings in the buffer have valid strings ending with a '\0'
+
 // As this is not supposed to be used except for some testing, this should not
 // be declared in a header
+
+resource_record parse_rr(char **buffer);
+
 void display_header(header *h)
 {
     printf("id: 0x%x\n", ntohs(h->id));
@@ -44,6 +50,9 @@ message parse_message(char *buffer)
 {
     message msg;
     question *q = NULL;
+    resource_record *an = NULL;
+    resource_record *ns = NULL;
+    resource_record *ar = NULL;
     char *content;
     header *head = (header *)buffer;
 
@@ -59,15 +68,62 @@ message parse_message(char *buffer)
         strncpy(q[i].qname, content, strlen(content));
         content += strlen(content) + 1;
         q[i].qtype = *(uint16_t *)content;
-        content = (char *)((uint16_t *)content) + 1;
+        content += sizeof(uint16_t) + 1;
         q[i].qclass = *(uint16_t *)content;
     }
 
     display_question(q);
 
+    an = calloc(head->ancount, sizeof(resource_record));
+
+    for (int i = 0; i < head->ancount; i++)
+    {
+        an[i] = parse_rr(&content);
+    }
+
+    ns = calloc(head->nscount, sizeof(resource_record));
+
+    for (int i = 0; i < head->nscount; i++)
+    {
+        ns[i] = parse_rr(&content);
+    }
+
+    ar = calloc(head->arcount, sizeof(resource_record));
+
+    for (int i = 0; i < head->arcount; i++)
+    {
+        ar[i] = parse_rr(&content);
+    }
+
     msg.header = *head;
     msg.question = q;
+    msg.answer = an;
+    msg.authority = ns;
+    msg.additional = ar;
     return msg;
+}
+
+resource_record parse_rr(char **buffer)
+{
+    resource_record rr;
+    char *name = NULL;
+    char *data = NULL;
+
+    name = calloc(strlen(*buffer), sizeof(char));
+    strncpy(name, *buffer, strlen(*buffer));
+    rr.name = name;
+    *buffer += strlen(*buffer) + 1;
+
+    rr.type = (uint16_t)**buffer;
+    rr.clss = (uint16_t)**buffer;
+    rr.ttl = (uint32_t)**buffer;
+    rr.rdlength = (uint16_t)**buffer;
+
+    data = calloc(strlen(*buffer), sizeof(char));
+    strncpy(data, *buffer, strlen(*buffer));
+    rr.rdata = data;
+
+    return rr;
 }
 
 
