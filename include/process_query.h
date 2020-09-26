@@ -3,8 +3,13 @@
 
 #include <stdint.h>
 
-uint64_t process_request(char* raw, char* out_buf, zone_array *p_zones);
+#include "common.h"
+#include "zone_file_parser.h"
 
-message build_answer(void);
+uint64_t process_request(char* raw, char** out_buf, zone_array *zones);
+
+void response_handle(message **response, message request, zone_array *zones);
+
+zone *response_lookup(question question, zone_array *zones);
 
 #endif /* ! _PROCESS_QUERY_H_ */

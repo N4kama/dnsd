@@ -6,6 +6,7 @@ SRC = \
 	  src/main.c \
 	  src/zone_file_parser.c \
 	  src/server.c \
+	  src/process_query.c \
 	  src/common.c
 
 OBJ = $(SRC:.c=.o)
