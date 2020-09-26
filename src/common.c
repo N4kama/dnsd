@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "error.h"
 #include "common.h"
 
 //FIXME Main issue with this code right now is it assumes that all the
@@ -46,9 +47,8 @@ void display_question(question *q)
 
 
 // Parse a dns message (query or answer)
-message parse_message(char *buffer)
+int parse_message(char *buffer, message *msg)
 {
-    message msg;
     question *q = NULL;
     resource_record *an = NULL;
     resource_record *ns = NULL;
@@ -58,6 +58,8 @@ message parse_message(char *buffer)
 
     display_header(head);
     q = calloc(head->qdcount, sizeof(question));
+    if (q == NULL)
+        return ERR_NOMEM;
 
     content = (buffer + sizeof(header));
 
@@ -65,6 +67,8 @@ message parse_message(char *buffer)
     for (int i = 0; i < head->qdcount; i++)
     {
         q[i].qname = calloc(strlen(content), sizeof(char));
+        if (q[i].qname == NULL)
+            return ERR_NOMEM;
         strncpy(q[i].qname, content, strlen(content));
         content += strlen(content) + 1;
         q[i].qtype = *(uint16_t *)content;
@@ -75,6 +79,8 @@ message parse_message(char *buffer)
     display_question(q);
 
     an = calloc(head->ancount, sizeof(resource_record));
+    if (an == NULL)
+        return ERR_NOMEM;
 
     for (int i = 0; i < head->ancount; i++)
     {
@@ -82,6 +88,8 @@ message parse_message(char *buffer)
     }
 
     ns = calloc(head->nscount, sizeof(resource_record));
+    if (ns == NULL)
+        return ERR_NOMEM;
 
     for (int i = 0; i < head->nscount; i++)
     {
@@ -89,18 +97,20 @@ message parse_message(char *buffer)
     }
 
     ar = calloc(head->arcount, sizeof(resource_record));
+    if (ar == NULL)
+        return ERR_NOMEM;
 
     for (int i = 0; i < head->arcount; i++)
     {
         ar[i] = parse_rr(&content);
     }
 
-    msg.header = *head;
-    msg.question = q;
-    msg.answer = an;
-    msg.authority = ns;
-    msg.additional = ar;
-    return msg;
+    msg->header = *head;
+    msg->question = q;
+    msg->answer = an;
+    msg->authority = ns;
+    msg->additional = ar;
+    return ERR_OK;
 }
 
 resource_record parse_rr(char **buffer)
@@ -110,6 +120,7 @@ resource_record parse_rr(char **buffer)
     char *data = NULL;
 
     name = calloc(strlen(*buffer), sizeof(char));
+
     strncpy(name, *buffer, strlen(*buffer));
     rr.name = name;
     *buffer += strlen(*buffer) + 1;

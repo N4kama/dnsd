@@ -62,7 +62,7 @@ typedef struct __packed
     resource_record *additional;
 } message;
 
-message parse_message(char *buffer);
+int parse_message(char *buffer, message *msg);
 uint64_t message_to_raw(message m, char **out);
 void free_message(message m);
 char *qname_to_string(char *qname);
