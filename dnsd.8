@@ -1,0 +1,57 @@
+.\" Manpage for dnsd.
+.TH DNSD 8 "26 Sep 2020" "1.0" "dnsd man page"
+.SH NAME
+dnsd \- \fBD\fRo \fBN\fRot \fBS\fRleep \fBD\fRNS
+
+.SH SYNOPSIS
+\fBdnsd\fR [-z /etc/dnsd/dnsd.zone]
+
+.SH DESCRIPTION
+\fBdnsd\fR is a fast, secure and lightweight authoritative DNS daemon written
+in pure C.
+
+.SH OPTIONS
+.IP "\fB\-z\fR" 4
+Set the zone file path, defaults to \fI/etc/dnsd/dnsd.zone\fR, see \fIdnsd.zonefile(5)\fR for more information on the used format.
+
+.SH EXIT STATUS
+.IP "(0) \fB\s-1ERR_OK\s0\fR" 4
+No error, everything ok.
+.IP "(1) \fB\s-1ERR_NOMEM\s0\fR" 4
+Out-of-memory error.
+.IP "(2) \fB\s-1ERR_NOENT\s0\fR" 4
+No such file or directory.
+.IP "(3) \fB\s-1ERR_PARSE_BADCNT\s0\fR" 4
+Bad value count in zone file line.
+.IP "(4) \fB\s-1ERR_PARSE_BADVAL\s0\fR" 4
+Bad formatted value in zone file line.
+
+.SH SIGNALS
+Any signal not explicitly mentioned is not explicitly handled. Meaning 
+that they'll have their default actions.
+.IP "\fB\s-1SIGTERM\s0\fR, \fB\s-1SIGINT\s0\fR" 4
+Causes the daemon to exit gracefully with accompanying log output.  The exit
+status will reflect the terminating signal appropriately.
+
+.SH SEE ALSO
+dnsd.zonefile(5)
+
+.SH BUGS
+No known bugs, robust af.
+
+.SH AUTHOR
+.P
+Céline Wu       (celine.wu@epita.fr)
+.P
+Gabriel Chabot  (gabriel.chabot@epita.fr)
+.P
+Paul Poincignon (paul.poincignon@epita.fr)
+.P
+Raymond Haddad  (raymond.haddad@epita.fr)
+.P
+Romain Baguet   (romain.baguet@epita.fr)
+.P
+William Lin     (william.lin@epita.fr)
+
+.SH "COPYRIGHT AND LICENSE"
+Copyright (c) 2020 Bullshit Corp.
