@@ -14,7 +14,7 @@
 
 #include "server.h"
 #include "common.h"
-//#include "process_query.h"
+#include "process_query.h"
 
 /**
  * Create sockets for the server : Can be used to create
@@ -24,13 +24,17 @@
  * On TCP : create_socket forks and returns a new socket each time
  * 
  * @param sin_family: AF_INET or AF_INET6
- * @param type: SOCK_STREAM or SOCK_DGRAM
+ * @param type: SOCK_STREAM or SOCK_DGRAM 
+ * @return: the socket file descriptor, -1 on error, -2 on server shutdown
 */
 int create_socket(int sin_family, int type)
 {
     int serverSockfd;               /* server socket */
+    int clientSockfd;               /* client socket (TCP only) */
     int optval;		                /* flag value for setsockopt */
     struct sockaddr_in serveraddr;  /* server addr */
+    struct sockaddr_in clientaddr;  /* client addr */
+    socklen_t clientaddrlen;         /* client address len */
 
     /* Creating ipv4 udp server */
     serverSockfd = socket(sin_family, type, 0);
@@ -43,7 +47,7 @@ int create_socket(int sin_family, int type)
 	 * otherwise we have to wait about few seconds. 
 	 */
     optval = 1;
-    setsockopt(serverSockfd, SOL_SOCKET, SO_REUSEADDR, 
+    setsockopt(serverSockfd, SOL_SOCKET, SO_REUSEADDR,
         (const void *)&optval, sizeof(int));
     
     /* Building the server address */
@@ -56,17 +60,41 @@ int create_socket(int sin_family, int type)
     if (bind(serverSockfd, &serveraddr, sizeof(serveraddr)) < 0)
         exitOnError("ERROR: failed to bind udp/ipv4 socket");
 
-    /* Handling tcp connection */
-    // if (type == SOCK_STREAM)
-    // {
-    //     if (listen(serverSockfd, TCP_MAX_CON) < 0)
-    //         exitOnError("ERROR: tcp socket failed to listen");
-    //     if ((clientSockfd = accept(serverSockfd, )) < 0)
-    //         exitOnError("ERROR: tcp socket failed to accept");
-    //     //FIXME : fork and stuff...
-    // }
+    if (type == SOCK_STREAM)
+    {
+        /* On TCP mode, fork and return every new client's socket */
 
-    return serverSockfd;
+        /* Placing new client connection in queue */
+        if (listen(serverSockfd, TCP_MAX_CON) < 0)
+            exitOnError("ERROR: tcp socket failed to listen");
+        
+        /* Accepting new connection, fork & return every new client socket */
+        for(;;)
+        {
+            if ((clientSockfd = 
+                accept(serverSockfd, &clientaddr, &clientaddrlen)) < 0)
+                exitOnError("ERROR: tcp socket failed to accept");
+            switch (fork())
+            {
+                case -1:
+                    exitOnError("ERROR: failed to fork in create_socket");
+                    return -1;
+                case 0:
+                    /* Child process - Client socket */
+                    return clientSockfd;
+                default:
+                    /* Parent process */
+                    continue;
+            }
+        }
+        close(clientSockfd);
+        return -1;
+    }
+    else
+    {
+        /* On UDP mode, simply return server socket */
+        return serverSockfd;
+    }
 }
 
 
@@ -111,11 +139,23 @@ void handler(zone_array *p_zones, int clientSockfd)
  */
 int start_server(zone_array *p_zones)
 {
-    /* Creating UDP/IPv4 server socket */
-    int socketfd = create_socket(AF_INET, SOCK_DGRAM);
+    (void) p_zones;
 
-    handler(p_zones, socketfd);
+    int socketfd;       /* client socket returned by server */
 
-    printf("DEBUG: %d", p_zones->count);
+    /* Handling incoming client connections */
+    switch ((socketfd = create_socket(AF_INET, SOCK_STREAM)))
+    {
+        case -2:
+            /* Server shut down */
+            exitOnError("WARNING: server shutting down");
+            return -2;
+        case -1:
+            /* Error with socket */
+            break;
+        default:
+            /* Q/A with client */
+            handler(p_zones, socketfd);
+    }
     return 0;
 }
