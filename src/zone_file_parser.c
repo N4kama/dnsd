@@ -28,6 +28,8 @@ uint16_t str2type(char *str)
         return TYPE_A;
     if (strcmp(str, "AAAA") == 0)
         return TYPE_AAAA;
+    if (strcmp(str, "CNAME") == 0)
+        return TYPE_CNAME;
     if (strcmp(str, "NS") == 0)
         return TYPE_NS;
     if (strcmp(str, "SOA") == 0)
