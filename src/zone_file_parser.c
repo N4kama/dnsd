@@ -1,7 +1,7 @@
 #include "zone_file_parser.h"
 
 // strchr() that support escaped searched char
-uint8_t *strechr(uint8_t *s, uint8_t c)
+char *strechr(char *s, char c)
 {
     for (uint64_t i = 0; s[i]; i++)
         if (s[i] == c && (i == 0 || s[i - 1] != '\\'))
@@ -11,7 +11,7 @@ uint8_t *strechr(uint8_t *s, uint8_t c)
 }
 
 // count occurence of char c in s
-uint32_t strcount(uint8_t *s, uint8_t c)
+uint32_t strcount(char *s, char c)
 {
     uint32_t count = 0;
     for (uint64_t i = 0; s[i]; i++)
@@ -20,7 +20,7 @@ uint32_t strcount(uint8_t *s, uint8_t c)
     return count;
 }
 
-uint16_t str2type(uint8_t *str)
+uint16_t str2type(char *str)
 {
     if (strcmp(str, "A") == 0)
         return TYPE_A;
@@ -35,7 +35,7 @@ uint16_t str2type(uint8_t *str)
     return 0;
 }
 
-zone_array *zone_parse(uint8_t *filename)
+zone_array *zone_parse(char *filename)
 {
     FILE *file = fopen(filename, "r");
     if (file == NULL)
@@ -50,14 +50,14 @@ zone_array *zone_parse(uint8_t *filename)
         return NULL; // empty file
     }
 
-    uint8_t *file_content = malloc(file_size + 1);
+    char *file_content = malloc(file_size + 1);
     if (file_content == NULL)
     {
         fclose(file);
         return NULL; // malloc failed
     }
 
-    uint64_t count = fread(file_content, sizeof(uint8_t), file_size, file);
+    uint64_t count = fread(file_content, sizeof(char), file_size, file);
     file_content[count] = 0;
 
     uint32_t line_count = strcount(file_content, '\n');
@@ -80,10 +80,10 @@ zone_array *zone_parse(uint8_t *filename)
         return NULL; // malloc failed
     }
 
-    uint8_t *cursor = file_content;
+    char *cursor = file_content;
     for (uint32_t i = 0; i < line_count; i++)
     {
-        uint8_t *endl = strechr(cursor, '\n');
+        char *endl = strechr(cursor, '\n');
         *endl = 0;
 
         // note: escaped char in other than the 4th value breaks everything
@@ -97,7 +97,7 @@ zone_array *zone_parse(uint8_t *filename)
         }
 
         // parse name
-        uint8_t *value_end = strechr(cursor, ';');
+        char *value_end = strechr(cursor, ';');
         *value_end = 0;
         zones->array[i].name = malloc(value_end - cursor + 1);
         if (zones->array[i].name == NULL)
@@ -157,15 +157,18 @@ void zone_free(zone_array *zones)
 
 void zone_print(zone_array *zones)
 {
-    for (uint32_t i = 0; i < zones->count; i++)
-        printf("zone %u:\n"
-               "\tname: '%s'\n"
-               "\ttype: %u\n"
-               "\tTTL: %u\n"
-               "\tcontent: '%s'\n",
-               i,
-               zones->array[i].name,
-               zones->array[i].type,
-               zones->array[i].ttl,
-               zones->array[i].content);
+    if (zones != NULL)
+    {
+        for (uint32_t i = 0; i < zones->count; i++)
+            printf("zone %u:\n"
+                   "\tname: '%s'\n"
+                   "\ttype: %u\n"
+                   "\tTTL: %u\n"
+                   "\tcontent: '%s'\n",
+                   i,
+                   zones->array[i].name,
+                   zones->array[i].type,
+                   zones->array[i].ttl,
+                   zones->array[i].content);
+    }
 }

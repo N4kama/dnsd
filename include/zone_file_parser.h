@@ -9,10 +9,10 @@
 #include "common.h"
 
 typedef struct {
-    uint8_t     *name;
+    char        *name;
     uint16_t    type;
     uint32_t    ttl;
-    uint8_t     *content;
+    char        *content;
 } zone;
 
 typedef struct {
@@ -20,12 +20,9 @@ typedef struct {
     zone        *array;
 } zone_array;
 
-//typedef uint32_t parser_err;
-
-zone_array      *zone_parse(uint8_t *filename);
+zone_array      *zone_parse(char *filename);
 void            zone_free(zone_array *zones);
 void            zone_print(zone_array *zones);
-//const uint8_t   *zone_strerror(parser_err);
 
 #endif
 

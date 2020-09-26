@@ -1,11 +1,17 @@
 #include <stdio.h>
 
+#include "zone_file_parser.h"
+
 int main(void) // int argc, char *argv[]) 
 {
-    // TODO: Parse config file
+    zone_array *zones;
+
+    zones = zone_parse("samples/dnsd.zonefile");
+    zone_print(zones);
 
     printf("Starting DNS server\n");
-    // TODO: Start server
+
+    zone_free(zones);
 
     return 0;
 }
