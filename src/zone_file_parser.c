@@ -3,6 +3,7 @@
 #include "zone_file_parser.h"
 
 // strchr() that support escaped searched char
+static
 char *strechr(char *s, char c)
 {
     for (uint64_t i = 0; s[i]; i++)
@@ -12,6 +13,7 @@ char *strechr(char *s, char c)
 }
 
 // count occurence of char c in s
+static
 uint32_t strcount(char *s, char c)
 {
     uint32_t count = 0;
@@ -22,6 +24,7 @@ uint32_t strcount(char *s, char c)
 }
 
 // string to QTYPE
+static
 uint16_t str2type(char *str)
 {
     if (strcmp(str, "A") == 0)
@@ -40,6 +43,7 @@ uint16_t str2type(char *str)
 }
 
 // check if domain is well-formed
+static
 uint8_t sanitize_name(char *name)
 {
     if (strlen(name) > MAX_NAME_LENGTH)
@@ -61,6 +65,7 @@ uint8_t sanitize_name(char *name)
 }
 
 // unescape a char in the given string
+static
 void str_unescape(char *s, char c)
 {
     for (; *s; s++)
