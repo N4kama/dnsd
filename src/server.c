@@ -15,6 +15,96 @@
 #include "server.h"
 
 /**
+ * Binds the server address to the socket in IPv4 or IPv6
+ * 
+ * @param serverSockfd: server socket file descriptor
+ * @param sin_family: AF_INET or AF_INET6
+ * @param type: SOCK_STREAM or SOCK_DGRAM
+ * @return: the dnsd_err code
+*/
+dnsd_err bind_socket(int serverSockfd, int sin_family, int type)
+{
+    uint16_t port;                          /* dns port number */
+
+    if (sin_family == AF_INET)
+    {
+        struct sockaddr_in  serveraddr;     /* server addr in IPv4 */
+
+        /* Building the server address */
+        bzero((char *)&serveraddr, sizeof(serveraddr));
+        serveraddr.sin_family = sin_family;
+        serveraddr.sin_addr = get_v4();
+        port = get_port(type);
+        serveraddr.sin_port = htons(port);
+
+        /* Binding socket to serverAddress */
+        if (bind(serverSockfd, &serveraddr, sizeof(serveraddr)) < 0)
+        {
+            printf("ipv4 err : %s\n", strerror(errno));
+            close(serverSockfd);
+            return ERR_SOCK_BIND;
+        }
+    }
+    else
+    {
+        struct sockaddr_in6 serveraddr6;    /* server addr in IPv6 */
+
+        /* Building the server address */
+        bzero((char *)&serveraddr6, sizeof(serveraddr6));
+        serveraddr6.sin6_family = sin_family;
+        serveraddr6.sin6_addr = get_v6();
+        port = get_port(type);
+        serveraddr6.sin6_port = htons(port);
+
+        /* Binding socket to serverAddress */
+        if (bind(serverSockfd, &serveraddr6, sizeof(serveraddr6)) < 0)
+        {
+            printf("ipv6 err : %s\n", strerror(errno));
+            close(serverSockfd);
+            return ERR_SOCK_BIND;
+        }
+    }
+    return ERR_OK;
+}
+
+/**
+ * Accepts new sockets in IPv4 or IPv6 (TCP only)
+ * 
+ * @param serverSockfd: server socket file descriptor
+ * @param clientSockfd: client socket file descriptor
+ * @param sin_family: AF_INET or AF_INET6
+ * @return: the dnsd_err code
+*/
+dnsd_err accept_socket(int serverSockfd, int *clientSockfd, int sin_family)
+{
+    socklen_t clientaddrlen;        /* client address len */
+
+    if (sin_family == AF_INET)
+    {
+        struct sockaddr_in clientaddr4;  /* client addr */
+
+        if ((*clientSockfd = 
+        accept(serverSockfd, &clientaddr4, &clientaddrlen)) < 0)
+        {
+            close(serverSockfd);
+            return ERR_SOCK_ACCEPT;
+        }
+    }
+    else
+    {
+        struct sockaddr_in6 clientaddr6;  /* client addr */
+
+        if ((*clientSockfd = 
+        accept(serverSockfd, &clientaddr6, &clientaddrlen)) < 0)
+        {
+            close(serverSockfd);
+            return ERR_SOCK_ACCEPT;
+        }
+    }
+    return ERR_OK;
+}
+
+/**
  * Create sockets for the server : Can be used to create
  * TCP/UDP sockets on IPv4/Ipv6
  * 
@@ -28,14 +118,11 @@
 */
 dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
 {
+    int errcode;                    /* error code */
     int serverSockfd;               /* server socket */
     int optval;		                /* flag value for setsockopt */
-    struct sockaddr_in serveraddr;  /* server addr */
-    struct sockaddr_in clientaddr;  /* client addr */
-    socklen_t clientaddrlen;        /* client address len */
-    uint16_t port;                  /* dns port number */
 
-    /* Creating ipv4 udp server */
+    /* Creating server socket : IPv4 or IPv6 / TCP or UDP */
     serverSockfd = socket(sin_family, type, 0);
 	if (serverSockfd < 0)
 		return ERR_SOCK_OPEN;
@@ -49,19 +136,8 @@ dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
     setsockopt(serverSockfd, SOL_SOCKET, SO_REUSEADDR,
         (const void *)&optval, sizeof(int));
     
-    /* Building the server address */
-    bzero((char *)&serveraddr, sizeof(serveraddr));
-    serveraddr.sin_family = AF_INET;
-    serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    port = get_port(type);
-    serveraddr.sin_port = htons(port);
-
-    /* Binding socket to serverAddress */
-    if (bind(serverSockfd, &serveraddr, sizeof(serveraddr)) < 0)
-    {
-        close(serverSockfd);
-        return ERR_SOCK_BIND;
-    }
+    if ((errcode = bind_socket(serverSockfd, sin_family, type)) != ERR_OK)
+        return errcode;
 
     if (type == SOCK_STREAM)
     {
@@ -77,12 +153,9 @@ dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
         /* Accepting new connection, fork & return every new client socket */
         while (!g_sigint)
         {
-            if ((*clientSockfd = 
-                accept(serverSockfd, &clientaddr, &clientaddrlen)) < 0)
-                {
-                    close(serverSockfd);
-                    return ERR_SOCK_ACCEPT;
-                }
+            if ((errcode = 
+            accept_socket(serverSockfd, clientSockfd, sin_family)) != ERR_OK)
+                return errcode;
 
             switch (fork())
             {
@@ -122,21 +195,18 @@ dnsd_err handler(zone_array *p_zones, int clientSockfd)
 
     char buf[1024];                 /* input buffer */
     int n;                          /* input byte size */
-    struct sockaddr_in clientaddr;  /* client addr */
-    socklen_t clientlen;		    /* byte size of clientaddr */
 
     /* request & response loop */
-    clientlen = sizeof(clientaddr);
     while (1)
     {
         /* receiving data from from a client */
-        n = recvfrom(clientSockfd, buf, 1024, 0, &clientaddr, &clientlen);
+        n = recv(clientSockfd, buf, sizeof(buf)-1, 0);
         if (n < 0)
         {
             close(clientSockfd);
             return ERR_SOCK_RECV;
         }
-        buf[n] = '\0';
+        buf[n] = 0;
         printf(buf); //DEBUG
 
         //call request_handler
@@ -159,18 +229,46 @@ dnsd_err start_server(zone_array *p_zones)
     dnsd_err errcode;           /* error code from create_socket */
     int clientSockfd;           /* client socket returned by server */
 
-    /* Creating socket for TCP and UDP connections */
+    /* Creating socket for TCP/UDP connections on IPv4/IPv6 */
     switch (fork())
     {
         case -1:
             return ERR_FORK;
         case 0:
             /* Child process    - UDP */
-            errcode = create_socket(&clientSockfd, AF_INET, SOCK_DGRAM);
+            switch (fork())
+            {
+                case -1:
+                    return ERR_FORK;
+                case 0:
+                    /* Child process UDP    - IPv4 */
+                    errcode = 
+                    create_socket(&clientSockfd, AF_INET, SOCK_DGRAM);
+                    break;
+                default:
+                    /* Parent process UDP   - IPv6 */
+                    errcode = 
+                    create_socket(&clientSockfd, AF_INET6, SOCK_DGRAM);
+                    break;
+            }
             break;
         default:
             /* Parent process   - TCP */
-            errcode = create_socket(&clientSockfd, AF_INET, SOCK_STREAM);
+            switch (fork())
+            {
+                case -1:
+                    return ERR_FORK;
+                case 0:
+                    /* Child process TCP    - IPv4 */
+                    errcode =
+                    create_socket(&clientSockfd, AF_INET, SOCK_STREAM);
+                    break;
+                default:
+                    /* Parent process TCP   - IPv6 */
+                    errcode =
+                    create_socket(&clientSockfd, AF_INET6, SOCK_STREAM);
+                    break;
+            }
             break;
     }
 
@@ -182,6 +280,4 @@ dnsd_err start_server(zone_array *p_zones)
         return ERR_OK;
     }
     return errcode;
-
-    return 0;
 }

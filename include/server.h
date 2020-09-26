@@ -9,6 +9,8 @@
 
 #define TCP_MAX_CON 10
 
+dnsd_err bind_socket(int serverSockfd, int sin_family, int type);
+dnsd_err accept_socket(int serverSockfd, int *clientSockfd, int sin_family);
 dnsd_err start_server(zone_array *p_zones);
 dnsd_err handler(zone_array *p_zones, int clientSockfd);
 dnsd_err create_socket(int *clientSockfd, int sin_family, int type);
