@@ -6,9 +6,9 @@
 #include "common.h"
 #include "zone_file_parser.h"
 
-uint64_t process_request(char* raw, char** out_buf, zone_array *zones);
+char *process_request(char* raw, int *out_size, zone_array *zones);
 
-void response_handle(message **response, message request, zone_array *zones);
+void response_handle(message *m, zone_array *zones);
 
 zone *response_lookup(question question, zone_array *zones);
 
