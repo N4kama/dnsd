@@ -87,7 +87,7 @@ dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
             switch (fork())
             {
                 case -1:
-                    close(clientSockfd);
+                    close(*clientSockfd);
                     close(serverSockfd);
                     return ERR_FORK;
                 case 0:
@@ -98,7 +98,7 @@ dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
                     continue;
             }
         }
-        close(clientSockfd);
+        close(*clientSockfd);
         close(serverSockfd);
         return ERR_FORCED_SHUTDOWN;
     }
