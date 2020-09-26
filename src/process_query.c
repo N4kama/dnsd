@@ -52,30 +52,43 @@ void response_handle(message *m, zone_array *zones)
     m->header.rd = 0;
     m->header.ra = 0;
     m->header.z = 0;
-    if (m->header.rcode != 0)
+
+    if (m->header.rcode != RCODE_NO_ERROR)
         return;
 
-    m->header.tc =        0; //FIXME
-
     zone *zone = response_lookup(m->question, zones);
+
     if (zone == NULL)
-        m->header.rcode = 5;
+        m->header.rcode = RCODE_REFUSED;
 
-    m->answer = malloc(sizeof(resource_record));
-    m->answer->name = ;
-    m->answer->type = ;
-    m->answer->clss = ;
-    m->answer->ttl = ;
-    m->answer->rdlength = ;
-    m->answer->rdata = ;
+    else if (zone->type == m->question.type)
+    {
+        m->header.rcode = RCODE_NO_ERROR;
+        m->answer = malloc(sizeof(resource_record));
+        m->answer->name = m->question.qname;
+        m->answer->type = m->question.qtype;
+        m->answer->clss = m->question.qclass;
+        //m->answer->ttl = ; //FIXME
+        //m->answer->rdlength = ; //FIXME
+        //m->answer->rdata = ; //FIXME
+    }
 
+    else if (zone->type == TYPE_SOA)
+    {
+        m->header.rcode = RCODE_NO_ERROR; // RCODE_NO_ERROR si nom présent mais type absent
+                                          // RCODE_NXDOMAIN si nom non-existant
+        m->authority = malloc(sizeof(resource_record));
+        m->authority->name = m->question.qname;
+        m->authority->type = m->question.qtype;
+        m->authority->clss = m->question.qclass;
+        //m->authority->ttl = ; //FIXME
+        //m->authority->rdlength = ; //FIXME
+        //m->authority->rdata = ; //FIXME
+    }
+
+    //m->header.tc = 0; //FIXME
 }
 
-
-/**
- * Builds a message struct out of the given parameters
- * @return A new response message
- */
 zone *response_lookup(question *question, zone_array *zones)
 {
     uint8_t isName = 0;
