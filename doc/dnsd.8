@@ -1,30 +1,82 @@
 .\" Manpage for dnsd.
+
+.de Vb \" Begin verbatim text
+.ft CW
+.nf
+.ne \\$1
+..
+.de Ve \" End verbatim text
+.ft R
+.fi
+..
+
+
 .TH DNSD 8 "26 Sep 2020" "1.0" "dnsd man page"
 .SH NAME
 dnsd \- \fBD\fRo \fBN\fRot \fBS\fRleep \fBD\fRNS
 
 .SH SYNOPSIS
-\fBdnsd\fR [-z /etc/dnsd/dnsd.zone]
+
+.Vb 10
+\&Usage:
+\&        dnsd [option] ...
+\&Options:
+\&        --help
+\&        --version
+\&        -v4 <IP>
+\&        -v6 <IP>
+\&        -pudp <port>
+\&        -ptcp <port>
+\&        -f <zone_file>
+.Ve
 
 .SH DESCRIPTION
 \fBdnsd\fR is a fast, secure and lightweight authoritative DNS daemon written
 in pure C.
 
 .SH OPTIONS
-.IP "\fB\-z\fR" 4
+.IP "\fB\-\-help\fR" 4
+Print a help message describing most common dnsd's command-line switches and a short description.
+.IP "\fB\-\-version\fR" 4
+Display the version of dnsd and exit.
+.IP "\fB\-v4\fR" 4
+Set the listening IPv4 address, defaults to 127.0.0.1.
+.IP "\fB\-v6\fR" 4
+Set the listening IPv6 address, defaults ::1.
+.IP "\fB\-pudp\fR" 4
+Set the listening UDP port, defaults to 53.
+.IP "\fB\-ptcp\fR" 4
+Set the listening TCP port, defaults to 53.
+.IP "\fB\-f\fR" 4
 Set the zone file path, defaults to \fI/etc/dnsd/dnsd.zone\fR, see \fIdnsd.zonefile(5)\fR for more information on the used format.
 
 .SH EXIT STATUS
-.IP "(0) \fB\s-1ERR_OK\s0\fR" 4
-No error, everything ok.
-.IP "(1) \fB\s-1ERR_NOMEM\s0\fR" 4
-Out-of-memory error.
-.IP "(2) \fB\s-1ERR_NOENT\s0\fR" 4
-No such file or directory.
-.IP "(3) \fB\s-1ERR_PARSE_BADCNT\s0\fR" 4
-Bad value count in zone file line.
-.IP "(4) \fB\s-1ERR_PARSE_BADVAL\s0\fR" 4
-Bad formatted value in zone file line.
+.IP " (0) \fB\s-1ERR_OK\s0\fR" 4
+ No error, everything ok.
+.IP " (1) \fB\s-1ERR_NOMEM\s0\fR" 4
+ Out-of-memory error.
+.IP " (2) \fB\s-1ERR_NOENT\s0\fR" 4
+ No such file or directory.
+.IP " (3) \fB\s-1ERR_PARSE_BADCNT\s0\fR" 4
+ Bad value count in zone file line.
+.IP " (4) \fB\s-1ERR_PARSE_BADVAL\s0\fR" 4
+ Bad formatted value in zone file line.
+.IP " (5) \fB\s-1ERR_PARSE_BADOPT\s0\fR" 4
+ Bad command line options.
+.IP " (6) \fB\s-1ERR_SOCK_OPEN\s0\fR" 4
+ Opening socket failed.
+.IP " (7) \fB\s-1ERR_SOCK_BIND\s0\fR" 4
+ Binding socket failed.
+.IP " (8) \fB\s-1ERR_SOCK_LISTEN\s0\fR" 4
+ Listening for new socket failed.
+.IP " (9) \fB\s-1ERR_SOCK_ACCEPT\s0\fR" 4
+ Accepting new socket failed.
+.IP "(10) \fB\s-1ERR_SOCK_RECV\s0\fR" 4
+ Receiving data on socket failed.
+.IP "(11) \fB\s-1ERR_FORK\s0\fR" 4
+ Fork failed.
+.IP "(12) \fB\s-1ERR_FORCED_SHUTDOWN\s0\fR" 4
+ Server shutting down
 
 .SH SIGNALS
 Any signal not explicitly mentioned is not explicitly handled. Meaning 
