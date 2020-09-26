@@ -3,6 +3,8 @@
 
 #include "common.h"
 #include "signal_handler.h"
+#include "process_query.h"
+#include "options.h"
 #include "zone_file_parser.h" //TODO: Should the structs be moved in common.h ?
 
 #define TCP_MAX_CON 10

@@ -93,4 +93,11 @@ void            set_port_tcp(char *p_tcp);
 */
 uint16_t        get_port_tcp(void);
 
+/**
+ * Calls get_port_tcp or get_port_udp according to protocol
+ * @param protocol: SOCK_STREAM or SOCK_DGRAM
+ * @return port number
+ */
+uint16_t        get_port(int protocol);
+
 #endif /* ! OPTIONS_H */

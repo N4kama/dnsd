@@ -13,8 +13,6 @@
 #include <string.h>
 
 #include "server.h"
-#include "common.h"
-#include "process_query.h"
 
 /**
  * Create sockets for the server : Can be used to create
@@ -34,7 +32,8 @@ dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
     int optval;		                /* flag value for setsockopt */
     struct sockaddr_in serveraddr;  /* server addr */
     struct sockaddr_in clientaddr;  /* client addr */
-    socklen_t clientaddrlen;         /* client address len */
+    socklen_t clientaddrlen;        /* client address len */
+    uint16_t port;                  /* dns port number */
 
     /* Creating ipv4 udp server */
     serverSockfd = socket(sin_family, type, 0);
@@ -54,7 +53,8 @@ dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
     bzero((char *)&serveraddr, sizeof(serveraddr));
     serveraddr.sin_family = AF_INET;
     serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serveraddr.sin_port = htons(53); //TODO: replace by variable
+    port = get_port(type);
+    serveraddr.sin_port = htons(port);
 
     /* Binding socket to serverAddress */
     if (bind(serverSockfd, &serveraddr, sizeof(serveraddr)) < 0)

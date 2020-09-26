@@ -64,3 +64,17 @@ uint16_t get_port_tcp(void)
 {
     return g_opt.p_tcp;
 }
+
+uint16_t get_port(int protocol)
+{
+    switch (protocol)
+    {
+    case SOCK_STREAM:
+        return get_port_tcp();
+    case SOCK_DGRAM:
+        return get_port_udp();
+    default:
+        /* ERROR */
+        return 0;
+    }
+}
