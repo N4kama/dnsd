@@ -1,5 +1,5 @@
-CC=gcc
-CFLAGS= -g -Wall -Wextra -Werror -pedantic -std=c11 -I include/
+CC = gcc
+CFLAGS = -g -std=c11 -Wall -Werror -Wextra -pedantic -I include/
 
 SRC = src/common.c \
 	  src/error.c \
@@ -7,26 +7,29 @@ SRC = src/common.c \
 	  src/process_query.c \
 	  src/server.c \
 	  src/signal_handler.c \
-      src/option_parser/option_parser.c \
-      src/option_parser/options_cmd.c \
-      src/option_parser/options.c
-
+	  src/option_parser/option_parser.c \
+	  src/option_parser/options_cmd.c \
+	  src/option_parser/options.c
 
 OBJ = $(SRC:.c=.o)
+BIN = dnsd
 
-dnsd: $(OBJ) src/main.o
+$(BIN): src/main.o $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
-unit: $(OBJ) src/unit_tests/unit.o
+unit: tests/unit_tests/unit.o $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 	./unit
 
-test: dnsd
-	./test.sh dnsd
+test: $(BIN)
+	./tests/test.sh $(BIN)
 
-install : dnsd
-all: dnsd
+install: $(BIN)
+all: $(BIN)
 
 .PHONY: clean
+
 clean:
-	rm -f $(OBJ) dnsd unit
+	$(RM) $(OBJ)
+	$(RM) $(BIN)
+	$(RM) unit
