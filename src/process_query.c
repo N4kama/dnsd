@@ -4,18 +4,6 @@
 #include "process_query.h"
 #include "zone_file_parser.h"
 
-static
-uint8_t is_name_good(char *name, char *zone_name)
-{
-    return strcmp(name, zone_name) == 0 ? 1 : 0;
-}
-
-static
-uint8_t is_type_good(uint16_t type, uint16_t zone_type)
-{
-    return type == zone_type;
-}
-
 /**
  * Takes raw bytes in input and builds and return a raw answer
  * Don't forget to free output_raw!!!
@@ -32,6 +20,8 @@ char *process_request(char* raw, uint64_t *out_size, zone_array *zones)
     if (ret != 0) // An error happened
         input_msg->header.rcode = 1;
 
+    // TODO: Check if there is at least 1 question
+
     // Process
     response_handle(input_msg, zones);
 
@@ -45,68 +35,145 @@ char *process_request(char* raw, uint64_t *out_size, zone_array *zones)
     return output_raw;
 }
 
-void response_handle(message *m, zone_array *zones)
+void init_answer(message *m)
 {
     m->header.qr = 1;
     m->header.aa = 1;
     m->header.rd = 0;
     m->header.ra = 0;
     m->header.z = 0;
+    m->header.tc = 0;
+    // qdcount stays the same
+    m->header.ancount = 0;
+    m->header.nscount = 0;
+    m->header.arcount = 0;
+}
+
+/**
+ * nom présent: if name and type are good, return zone
+ * nom présent mais type absent: if name is good but not type, return SOA
+ * nom non-existant: check if zone name is substring of name, return SOA
+ * empty non terminal: return SOA ?
+ * zone inconnue: return NULL
+ */
+void response_handle(message *m, zone_array *zones)
+{
+    init_answer(m);
 
     if (m->header.rcode != RCODE_NO_ERROR)
         return;
 
-    zone *zone = response_lookup(m->question, zones);
+    char *name = m->question->qname;
+    uint16_t type = m->question->qtype;
+    zone *best_soa = NULL;
+    int16_t soa_score = 0;
 
-    if (zone == NULL)
-        m->header.rcode = RCODE_REFUSED;
-
-    else if (zone->type == m->question->qtype)
+    for (uint32_t i = 0; i < zones->count; ++i)
     {
-        m->header.rcode = RCODE_NO_ERROR;
-        m->answer = malloc(sizeof(resource_record));
-        m->answer->name = m->question->qname;
-        m->answer->type = m->question->qtype;
-        m->answer->clss = m->question->qclass;
-        //m->answer->ttl = ; //FIXME
-        //m->answer->rdlength = ; //FIXME
-        //m->answer->rdata = ; //FIXME
+        zone *z = &zones->array[i];
+        int16_t cmp_score = qname_cmp(name, z->name);
+
+        if (cmp_score < 0 && type == z->type)
+        {
+            m->header.ancount += 1;
+            m->header.rcode = RCODE_NO_ERROR;
+            m->answer = malloc(sizeof(resource_record));
+            m->answer->name = m->question->qname;
+            m->answer->type = m->question->qtype;
+            m->answer->clss = m->question->qclass;
+            m->answer->ttl = z->ttl;
+            //m->answer->rdata = ; //FIXME
+            //m->answer->rdlength = ; //FIXME
+            return;
+        }
+
+        // check if SOA is better than previous one
+        if (type == TYPE_SOA && cmp_score > soa_score)
+        {
+            best_soa = z;
+            soa_score = cmp_score;
+        }
     }
 
-    else if (zone->type == TYPE_SOA)
+    if (best_soa != NULL)
     {
+        m->header.nscount += 1;
         m->header.rcode = RCODE_NO_ERROR; // RCODE_NO_ERROR si nom présent mais type absent
                                           // RCODE_NXDOMAIN si nom non-existant
         m->authority = malloc(sizeof(resource_record));
         m->authority->name = m->question->qname;
         m->authority->type = m->question->qtype;
         m->authority->clss = m->question->qclass;
-        //m->authority->ttl = ; //FIXME
-        //m->authority->rdlength = ; //FIXME
-        //m->authority->rdata = ; //FIXME
+        m->authority->ttl = best_soa->ttl;
+        uint16_t rsize;
+        char *rdata = rdata_from_type(TYPE_SOA, best_soa, &rsize);
+        m->authority->rdata = rdata;
+        m->authority->rdlength = rsize;
     }
-
-    //m->header.tc = 0; //FIXME
+    
+    // TODO: Check tc:indique si la réponse dépasse la taille maximum d’un
+    // message UDP pour le client,
+    // if (XXX)
+    //  m->header.tc = 1;
 }
 
-zone *response_lookup(question *question, zone_array *zones)
+
+/*
+ * Retrun nb of matching domains
+ */
+int qname_cmp(char *qname, char *str2)
 {
-    uint8_t isName = 0;
-    uint8_t isType = 0;
+    char *str1 = qname_to_string(qname);
+    uint64_t l1 = strlen(str1) - 1;
+    uint64_t l2 = strlen(str2) - 1;
 
-    for (uint32_t i = 0; i < zones->count; ++i)
+    uint64_t matching = 0;
+    for (;l1 != 0 && l2 != 0;)
     {
-        // nom présent: if name and type are good, return zone
-        // nom présent mais type absent: if name is good but not type, return SOA
-        // nom non-existant: check if zone name is substring of name, return SOA
-        // empty non terminal: return SOA ?
-        // zone inconnue: return NULL
-        isName = is_name_good(question->qname, zones->array[i].name);
-        isType = is_type_good(question->qtype, zones->array[i].type);
+        if (str1[l1] != str2[l2])
+            break;
+        if (str1[l1] == '.' && str2[l2] == '.')
+            matching += 1;
 
-        if (isName && isType)
-            return &zones->array[i];
+        l1--;
+        l2--;
     }
 
+    free(str1);
+    if (l1 == 0 && l2 == 0)
+        return -1;
+
+    return matching;
+}
+
+/**
+ * Modify *rdata and *rsize depending on type and zone given
+ * Do not forget to free return pointer
+ */
+char *rdata_from_type(int type, zone *z, uint16_t *rsize)
+{
+    char *rdata = NULL;
+    switch(type)
+    {
+        case TYPE_A:
+            break;
+        case TYPE_AAAA:
+            break;
+        case TYPE_CNAME:
+            break;
+        case TYPE_MX:
+            break;
+        case TYPE_NS:
+            break;
+        case TYPE_SOA:
+            break;
+        case TYPE_TXT:
+            *rsize = strlen(z->content);
+            rdata = malloc(*rsize);
+            strncpy(rdata, z->content, *rsize);
+            return rdata;
+    };
+
+    // Not handled
     return NULL;
 }

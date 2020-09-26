@@ -45,6 +45,16 @@ void display_question(question *q)
     free(name);
 }
 
+void display_rr(resource_record rr)
+{
+    printf("name: %s\n", rr.name);
+    printf("type: %u\n", rr.type);
+    printf("clss: %u\n", rr.clss);
+    printf("ttl: %u\n", rr.ttl);
+    printf("rdlength: %u\n", rr.rdlength);
+    printf("data: %s\n", rr.rdata);
+}
+
 
 // Parse a dns message (query or answer)
 int parse_message(char *buffer, message *msg)
@@ -56,54 +66,6 @@ int parse_message(char *buffer, message *msg)
     char *content;
     header *head = (header *)buffer;
 
-    q = calloc(head->qdcount, sizeof(question));
-    if (q == NULL)
-        return ERR_NOMEM;
-
-    content = (buffer + sizeof(header));
-
-    // Clean this up
-    for (int i = 0; i < head->qdcount; i++)
-    {
-        q[i].qname = calloc(strlen(content), sizeof(char));
-        if (q[i].qname == NULL)
-            return ERR_NOMEM;
-        strncpy(q[i].qname, content, strlen(content));
-        content += strlen(content) + 1;
-        q[i].qtype = ntohs(*(uint16_t *)content);
-        content += sizeof(uint16_t);
-        q[i].qclass = ntohs(*(uint16_t *)content);
-        content += sizeof(uint16_t);
-    }
-
-
-    an = calloc(head->ancount, sizeof(resource_record));
-    if (an == NULL)
-        return ERR_NOMEM;
-
-    for (int i = 0; i < head->ancount; i++)
-    {
-        an[i] = parse_rr(&content);
-    }
-
-    ns = calloc(head->nscount, sizeof(resource_record));
-    if (ns == NULL)
-        return ERR_NOMEM;
-
-    for (int i = 0; i < head->nscount; i++)
-    {
-        ns[i] = parse_rr(&content);
-    }
-
-    ar = calloc(head->arcount, sizeof(resource_record));
-    if (ar == NULL)
-        return ERR_NOMEM;
-
-    for (int i = 0; i < head->arcount; i++)
-    {
-        ar[i] = parse_rr(&content);
-    }
-
     msg->header = *head;
     msg->header.id = ntohs(head->id);
     msg->header.bytes = ntohs(head->bytes);
@@ -111,6 +73,56 @@ int parse_message(char *buffer, message *msg)
     msg->header.ancount = ntohs(head->ancount);
     msg->header.nscount = ntohs(head->nscount);
     msg->header.arcount = ntohs(head->arcount);
+
+    q = calloc(msg->header.qdcount, sizeof(question));
+    if (q == NULL)
+        return ERR_NOMEM;
+
+    content = (buffer + sizeof(header));
+
+    // Clean this up
+    for (int i = 0; i < msg->header.qdcount; i++)
+    {
+        q[i].qname = calloc(strlen(content), sizeof(char));
+        if (q[i].qname == NULL)
+            return ERR_NOMEM;
+        strncpy(q[i].qname, content, strlen(content) + 1);
+        content += strlen(content) + 1;
+        q[i].qtype = ntohs(*(uint16_t *)content);
+        content += sizeof(uint16_t);
+        q[i].qclass = ntohs(*(uint16_t *)content);
+        content += sizeof(uint16_t);
+    }
+    printf("%x\n", *content);
+
+
+    an = calloc(msg->header.ancount, sizeof(resource_record));
+    if (an == NULL)
+        return ERR_NOMEM;
+
+    for (int i = 0; i < msg->header.ancount; i++)
+    {
+        an[i] = parse_rr(&content);
+    }
+
+    ns = calloc(msg->header.nscount, sizeof(resource_record));
+    if (ns == NULL)
+        return ERR_NOMEM;
+
+    for (int i = 0; i < msg->header.nscount; i++)
+    {
+        ns[i] = parse_rr(&content);
+    }
+
+    ar = calloc(msg->header.arcount, sizeof(resource_record));
+    if (ar == NULL)
+        return ERR_NOMEM;
+
+    for (int i = 0; i < msg->header.arcount; i++)
+    {
+        ar[i] = parse_rr(&content);
+    }
+
     msg->question = q;
     msg->answer = an;
     msg->authority = ns;
@@ -124,20 +136,34 @@ resource_record parse_rr(char **buffer)
     char *name = NULL;
     char *data = NULL;
 
-    name = calloc(strlen(*buffer), sizeof(char));
-
-    strncpy(name, *buffer, strlen(*buffer));
+    //Compression
+    if ((uint8_t)**buffer >= 192)
+    {
+        name = calloc(2, sizeof(char));
+        memcpy(name, *buffer, 2);
+        *buffer += 2;
+    }
+    else
+    {
+        name = calloc(strlen(*buffer), sizeof(char));
+        strncpy(name, *buffer, strlen(*buffer) + 1);
+        *buffer += strlen(*buffer) + 1;
+    }
     rr.name = name;
-    *buffer += strlen(*buffer) + 1;
 
-    rr.type = ntohs((uint16_t)**buffer);
-    rr.clss = ntohs((uint16_t)**buffer);
-    rr.ttl = ntohl((uint32_t)**buffer);
-    rr.rdlength = ntohs((uint16_t)**buffer);
+    rr.type = ntohs(*(uint16_t*)*buffer);
+    *buffer += sizeof(uint16_t);
+    rr.clss = ntohs(*(uint16_t*)*buffer);
+    *buffer += sizeof(uint16_t);
+    rr.ttl = ntohl(*(uint32_t*)*buffer);
+    *buffer += sizeof(uint32_t);
+    rr.rdlength = ntohs(*(uint16_t*)*buffer);
+    *buffer += sizeof(uint16_t);
 
-    data = calloc(strlen(*buffer), sizeof(char));
-    strncpy(data, *buffer, strlen(*buffer));
+    data = calloc(rr.rdlength, sizeof(char));
+    memcpy(data, *buffer, rr.rdlength);
     rr.rdata = data;
+    *buffer += rr.rdlength;
 
     return rr;
 }
@@ -234,15 +260,25 @@ void free_message_ptr(message *m)
 
 int copy_rr(char **out, resource_record rr)
 {
-    memcpy(*out, rr.name, strlen(rr.name));
-    *out += strlen(rr.name) + 1;
-    **out = htons(rr.type);
+    if ((uint8_t)rr.name[0] >= 192)
+    {
+        **out = rr.name[0];
+        *out += 1;
+        **out = rr.name[1];
+        *out += 1;
+    }
+    else
+    {
+        memcpy(*out, rr.name, strlen(rr.name) + 1);
+        *out += strlen(rr.name) + 1;
+    }
+    *(uint16_t*)*out = htons(rr.type);
     *out += sizeof(uint16_t);
-    **out = htons(rr.clss);
+    *(uint16_t*)*out = htons(rr.clss);
     *out += sizeof(uint16_t);
-    **out = htonl(rr.ttl);
+    *(uint32_t*)*out = htonl(rr.ttl);
     *out += sizeof(uint32_t);
-    **out = htons(rr.rdlength);
+    *(uint16_t*)*out = htons(rr.rdlength);
     *out += sizeof(uint16_t);
     memcpy(*out, rr.rdata, rr.rdlength);
     *out += rr.rdlength;
@@ -252,8 +288,15 @@ int copy_rr(char **out, resource_record rr)
 
 uint64_t rr_length(resource_record rr)
 {
-    uint64_t rr_len = 3 * sizeof(uint16_t) + sizeof(uint32_t) + rr.rdlength;
-    rr_len += strlen(rr.name) + 1;
+    uint64_t rr_len = (3 * sizeof(uint16_t)) + sizeof(uint32_t) + rr.rdlength;
+    if ((uint8_t)rr.name[0] >= 192)
+    {
+        rr_len += 2;
+    }
+    else
+    {
+        rr_len += strlen(rr.name);
+    }
     return rr_len;
 }
 
@@ -269,7 +312,7 @@ uint64_t message_length(message m)
     uint64_t len = sizeof(header);
 
     for (i = 0; i < m.header.qdcount; i++)
-        len += 2 * sizeof(uint16_t) + strlen(m.question[i].qname) + 1;
+        len += (2 * sizeof(uint16_t)) + strlen(m.question[i].qname) + 1;
 
     for (i = 0; i < m.header.ancount; i++)
         len += rr_length(m.answer[i]);

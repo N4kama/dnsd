@@ -1,5 +1,4 @@
 .\" Manpage for dnsd.
-
 .de Vb \" Begin verbatim text
 .ft CW
 .nf
@@ -10,13 +9,11 @@
 .fi
 ..
 
-
 .TH DNSD 8 "26 Sep 2020" "1.0" "dnsd man page"
 .SH NAME
 dnsd \- \fBD\fRo \fBN\fRot \fBS\fRleep \fBD\fRNS
 
 .SH SYNOPSIS
-
 .Vb 10
 \&Usage:
 \&        dnsd [option] ...
@@ -48,7 +45,7 @@ Set the listening UDP port, defaults to 53.
 .IP "\fB\-ptcp\fR" 4
 Set the listening TCP port, defaults to 53.
 .IP "\fB\-f\fR" 4
-Set the zone file path, defaults to \fI/etc/dnsd/dnsd.zone\fR, see \fIdnsd.zonefile(5)\fR for more information on the used format.
+Set the zone file path, defaults to \fI/etc/dnsd/dnsd.zone\fR, see \fIdnsd.zone(5)\fR for more information on the used format.
 
 .SH EXIT STATUS
 .IP " (0) \fB\s-1ERR_OK\s0\fR" 4
@@ -86,7 +83,7 @@ Causes the daemon to exit gracefully with accompanying log output.  The exit
 status will reflect the terminating signal appropriately.
 
 .SH SEE ALSO
-dnsd.zonefile(5)
+dnsd.zone(5)
 
 .SH BUGS
 No known bugs, robust af.
