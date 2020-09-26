@@ -12,6 +12,13 @@ struct options
     const char      *cmd_name;      /*!< name of the command*/
 };
 
+/**
+ * Parse options from the command line
+ * 
+ * @param argc: number of arguments from the command line
+ * @param argv: arguments from the command line
+ * @return: dnsd_err, either ERR_OK or ERR_BADOPT
+*/
 dnsd_err    parse_options(int argc, char **argv);
 
 #endif /* ! OPTION_PARSER_H */
