@@ -23,14 +23,14 @@
  * On UDP : same socket for every client
  * On TCP : create_socket forks and returns a new socket each time
  * 
+ * @param clientSockfd: pointer to the client socket created in this function
  * @param sin_family: AF_INET or AF_INET6
  * @param type: SOCK_STREAM or SOCK_DGRAM 
- * @return: the socket file descriptor, -1 on error, -2 on server shutdown
+ * @return: the dnsd_err code
 */
-int create_socket(int sin_family, int type)
+dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
 {
     int serverSockfd;               /* server socket */
-    int clientSockfd;               /* client socket (TCP only) */
     int optval;		                /* flag value for setsockopt */
     struct sockaddr_in serveraddr;  /* server addr */
     struct sockaddr_in clientaddr;  /* client addr */
@@ -39,7 +39,7 @@ int create_socket(int sin_family, int type)
     /* Creating ipv4 udp server */
     serverSockfd = socket(sin_family, type, 0);
 	if (serverSockfd < 0)
-		exitOnError("ERROR: failed at opening socket");
+		return ERR_SOCK_OPEN;
 
 	/**
      * setsockopt: Prevents "ERROR on binding: address already in use" error
@@ -58,7 +58,10 @@ int create_socket(int sin_family, int type)
 
     /* Binding socket to serverAddress */
     if (bind(serverSockfd, &serveraddr, sizeof(serveraddr)) < 0)
-        exitOnError("ERROR: failed to bind udp/ipv4 socket");
+    {
+        close(serverSockfd);
+        return ERR_SOCK_BIND;
+    }
 
     if (type == SOCK_STREAM)
     {
@@ -66,34 +69,44 @@ int create_socket(int sin_family, int type)
 
         /* Placing new client connection in queue */
         if (listen(serverSockfd, TCP_MAX_CON) < 0)
-            exitOnError("ERROR: tcp socket failed to listen");
+        {
+            close(serverSockfd);
+            return ERR_SOCK_LISTEN;
+        }
         
         /* Accepting new connection, fork & return every new client socket */
-        for(;;)
+        while (!g_sigint)
         {
-            if ((clientSockfd = 
+            if ((*clientSockfd = 
                 accept(serverSockfd, &clientaddr, &clientaddrlen)) < 0)
-                exitOnError("ERROR: tcp socket failed to accept");
+                {
+                    close(serverSockfd);
+                    return ERR_SOCK_ACCEPT;
+                }
+
             switch (fork())
             {
                 case -1:
-                    exitOnError("ERROR: failed to fork in create_socket");
-                    return -1;
+                    close(clientSockfd);
+                    close(serverSockfd);
+                    return ERR_FORK;
                 case 0:
                     /* Child process - Client socket */
-                    return clientSockfd;
+                    return ERR_OK;
                 default:
                     /* Parent process */
                     continue;
             }
         }
         close(clientSockfd);
-        return -1;
+        close(serverSockfd);
+        return ERR_FORCED_SHUTDOWN;
     }
     else
     {
         /* On UDP mode, simply return server socket */
-        return serverSockfd;
+        *clientSockfd = serverSockfd;
+        return ERR_OK;
     }
 }
 
@@ -102,8 +115,9 @@ int create_socket(int sin_family, int type)
  * Receive requests from client and respond
  * @param clientSockfd Client's socket to manage
  * @param is_stream Is the given socket a TCP socket ?
+ * @return: the dnsd_err code
  */
-void handler(zone_array *p_zones, int clientSockfd)
+dnsd_err handler(zone_array *p_zones, int clientSockfd)
 {
     (void) p_zones;
 
@@ -119,7 +133,10 @@ void handler(zone_array *p_zones, int clientSockfd)
         /* receiving data from from a client */
         n = recvfrom(clientSockfd, buf, 1024, 0, &clientaddr, &clientlen);
         if (n < 0)
-            exitOnError("ERROR: recvfrom failed");
+        {
+            close(clientSockfd);
+            return ERR_SOCK_RECV;
+        }
         buf[n] = '\0';
         printf(buf); //DEBUG
 
@@ -127,8 +144,8 @@ void handler(zone_array *p_zones, int clientSockfd)
         //send(serverSockfd, process_request(buf, p_zones));
     }
 
-    // CLOSE TCP SOCKET
-    return;
+    close(clientSockfd);
+    return ERR_OK;
 }
 
 
@@ -137,25 +154,22 @@ void handler(zone_array *p_zones, int clientSockfd)
  * 
  * @param p_zones the parsed zone file
  */
-int start_server(zone_array *p_zones)
+dnsd_err start_server(zone_array *p_zones)
 {
     (void) p_zones;
 
-    int socketfd;       /* client socket returned by server */
+    dnsd_err errcode;   /* error code from create_socket */
+    int clientSockfd;         /* client socket returned by server */
 
     /* Handling incoming client connections */
-    switch ((socketfd = create_socket(AF_INET, SOCK_STREAM)))
+    errcode = create_socket(&clientSockfd, AF_INET, SOCK_STREAM);
+    if (errcode == ERR_OK)
     {
-        case -2:
-            /* Server shut down */
-            exitOnError("WARNING: server shutting down");
-            return -2;
-        case -1:
-            /* Error with socket */
-            break;
-        default:
-            /* Q/A with client */
-            handler(p_zones, socketfd);
+        /* Q/A with client */
+        handler(p_zones, clientSockfd);
+        return ERR_OK;
     }
+    return errcode;
+
     return 0;
 }

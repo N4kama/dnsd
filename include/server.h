@@ -2,13 +2,14 @@
 #define SERVER_H
 
 #include "common.h"
+#include "signal_handler.h"
 #include "zone_file_parser.h" //TODO: Should the structs be moved in common.h ?
 
 #define TCP_MAX_CON 10
 
-int start_server(zone_array *p_zones);
-void handler(zone_array *p_zones, int clientSockfd);
-int create_socket(int sin_family, int type);
+dnsd_err start_server(zone_array *p_zones);
+dnsd_err handler(zone_array *p_zones, int clientSockfd);
+dnsd_err create_socket(int *clientSockfd, int sin_family, int type);
 
 #endif
 
