@@ -33,14 +33,15 @@ dnsd_err bind_socket(int serverSockfd, int sin_family, int type)
         /* Building the server address */
         bzero((char *)&serveraddr, sizeof(serveraddr));
         serveraddr.sin_family = sin_family;
-        serveraddr.sin_addr = get_v4();
+        //FIXME serveraddr.sin_addr = get_v4();
+        serveraddr.sin_addr.s_addr = INADDR_ANY;
         port = get_port(type);
         serveraddr.sin_port = htons(port);
 
         /* Binding socket to serverAddress */
         if (bind(serverSockfd, &serveraddr, sizeof(serveraddr)) < 0)
         {
-            printf("ipv4 err : %s\n", strerror(errno));
+            fprintf(stderr, "[ERROR] binding in IPv4 : %s\n", strerror(errno));
             close(serverSockfd);
             return ERR_SOCK_BIND;
         }
@@ -59,7 +60,7 @@ dnsd_err bind_socket(int serverSockfd, int sin_family, int type)
         /* Binding socket to serverAddress */
         if (bind(serverSockfd, &serveraddr6, sizeof(serveraddr6)) < 0)
         {
-            printf("ipv6 err : %s\n", strerror(errno));
+            fprintf(stderr, "[ERROR] binding in IPv4 : %s\n", strerror(errno));
             close(serverSockfd);
             return ERR_SOCK_BIND;
         }
@@ -77,7 +78,7 @@ dnsd_err bind_socket(int serverSockfd, int sin_family, int type)
 */
 dnsd_err accept_socket(int serverSockfd, int *clientSockfd, int sin_family)
 {
-    socklen_t clientaddrlen;        /* client address len */
+    socklen_t clientaddrlen;            /* client address len */
 
     if (sin_family == AF_INET)
     {
