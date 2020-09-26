@@ -10,8 +10,6 @@ int main(int argc, char **argv)
 {
     dnsd_err code;
 
-    // TODO: init opt struct even if no options : to default opts
-
     if (argc >= 2)
     {
         code = parse_options(argc, argv);
