@@ -26,14 +26,21 @@
 typedef struct __packed
 {
     uint16_t    id;
-    uint8_t     qr      :1;
-    uint8_t     opcode  :4;
-    uint8_t     aa      :1;
-    uint8_t     tc      :1;
-    uint8_t     rd      :1;
-    uint8_t     ra      :1;
-    uint8_t     z       :3;
-    uint8_t     rcode   :4;
+    union 
+    {
+        uint16_t bytes;
+        struct
+        {
+            uint8_t     qr      :1;
+            uint8_t     opcode  :4;
+            uint8_t     aa      :1;
+            uint8_t     tc      :1;
+            uint8_t     rd      :1;
+            uint8_t     ra      :1;
+            uint8_t     z       :3;
+            uint8_t     rcode   :4;
+        };
+    };
     uint16_t    qdcount;
     uint16_t    ancount;
     uint16_t    nscount;
@@ -77,6 +84,7 @@ void free_message(message m);
 char *qname_to_string(char *qname);
 char *string_to_qname(char *s);
 void display_header(header *h);
+void display_question(question *q);
 
 #endif
 

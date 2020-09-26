@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -Wall -Wextra -Werror -pedantic -std=c99 -I include/
+CFLAGS= -g -Wall -Wextra -Werror -pedantic -std=c11 -I include/
 
 SRC = src/common.c \
 	  src/error.c \

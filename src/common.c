@@ -17,18 +17,18 @@ resource_record parse_rr(char **buffer);
 void display_header(header *h)
 {
     printf("id: 0x%x\n", ntohs(h->id));
-    printf("qr %x\n", ntohs(h->qr));
-    printf("opcode %x\n", ntohs(h->opcode));
-    printf("aa %x\n", ntohs(h->aa));
-    printf("tc %x\n", ntohs(h->tc));
-    printf("rd %x\n", ntohs(h->rd));
-    printf("ra %x\n", ntohs(h->ra));
-    printf("z %x\n", ntohs(h->z));
-    printf("rcode %x\n", ntohs(h->rcode));
-    printf("qdcount: %d\n", ntohs(h->qdcount));
-    printf("ancount: %d\n", ntohs(h->ancount));
-    printf("nscount: %d\n", ntohs(h->nscount));
-    printf("arcount: %d\n", ntohs(h->arcount));
+    printf("qr %x\n", h->qr);
+    printf("opcode %x\n", h->opcode);
+    printf("aa %x\n", h->aa);
+    printf("tc %x\n", h->tc);
+    printf("rd %x\n", h->rd);
+    printf("ra %x\n", h->ra);
+    printf("z %x\n", h->z);
+    printf("rcode %x\n", h->rcode);
+    printf("qdcount: %d\n", h->qdcount);
+    printf("ancount: %d\n", h->ancount);
+    printf("nscount: %d\n", h->nscount);
+    printf("arcount: %d\n", h->arcount);
 }
 
 // Displays a single question
@@ -39,8 +39,8 @@ void display_question(question *q)
 
     printf("qname: %s\n", q->qname);
     printf("printable name: %s\n", name);
-    printf("qtype: %d\n", ntohs(q->qtype));
-    printf("qclass: %d\n", ntohs(q->qclass));
+    printf("qtype: %d\n", q->qtype);
+    printf("qclass: %d\n", q->qclass);
 
     free(name);
 }
@@ -55,6 +55,11 @@ int parse_message(char *buffer, message *msg)
     resource_record *ar = NULL;
     char *content;
     header *head = (header *)buffer;
+    head->bytes = ntohs(head->bytes);
+    head->qdcount = ntohs(head->qdcount);
+    head->ancount = ntohs(head->ancount);
+    head->nscount = ntohs(head->nscount);
+    head->arcount = ntohs(head->arcount);
 
     q = calloc(head->qdcount, sizeof(question));
     if (q == NULL)
@@ -70,9 +75,10 @@ int parse_message(char *buffer, message *msg)
             return ERR_NOMEM;
         strncpy(q[i].qname, content, strlen(content));
         content += strlen(content) + 1;
-        q[i].qtype = *(uint16_t *)content;
-        content += sizeof(uint16_t) + 1;
-        q[i].qclass = *(uint16_t *)content;
+        q[i].qtype = ntohs(*(uint16_t *)content);
+        content += sizeof(uint16_t);
+        q[i].qclass = ntohs(*(uint16_t *)content);
+        content += sizeof(uint16_t);
     }
 
 
@@ -123,10 +129,10 @@ resource_record parse_rr(char **buffer)
     rr.name = name;
     *buffer += strlen(*buffer) + 1;
 
-    rr.type = (uint16_t)**buffer;
-    rr.clss = (uint16_t)**buffer;
-    rr.ttl = (uint32_t)**buffer;
-    rr.rdlength = (uint16_t)**buffer;
+    rr.type = ntohs((uint16_t)**buffer);
+    rr.clss = ntohs((uint16_t)**buffer);
+    rr.ttl = ntohs((uint32_t)**buffer);
+    rr.rdlength = ntohs((uint16_t)**buffer);
 
     data = calloc(strlen(*buffer), sizeof(char));
     strncpy(data, *buffer, strlen(*buffer));
