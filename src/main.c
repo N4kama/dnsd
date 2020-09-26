@@ -2,6 +2,7 @@
 
 #include "error.h"
 #include "zone_file_parser.h"
+#include "server.h"
 
 int main(void) // int argc, char *argv[]) 
 {
@@ -17,7 +18,8 @@ int main(void) // int argc, char *argv[])
 
     zone_print(zones);
 
-    printf("Starting DNS server\n");
+    printf("-------------------\nStarting DNS server\n-------------------\n");
+    start_server(zones);
 
     zone_free(zones);
 

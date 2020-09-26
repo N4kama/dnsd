@@ -18,3 +18,13 @@ char *dnsd_strerror(dnsd_err code)
             return "Unknown error code";
     }
 }
+
+/**
+ * exitOnError - wrapper for perror
+ * @param msg a pointer to the error message
+ */
+void exitOnError(char *msg)
+{
+	perror(msg);
+	exit(1);
+}

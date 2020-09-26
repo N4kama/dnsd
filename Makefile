@@ -4,7 +4,8 @@ CFLAGS= -Wall -Wextra -Werror -pedantic -std=c99 -I include/
 SRC = \
 	  src/error.c \
 	  src/main.c \
-	  src/zone_file_parser.c
+	  src/zone_file_parser.c \
+	  src/server.c
 
 OBJ = $(SRC:.c=.o)
 

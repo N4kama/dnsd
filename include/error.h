@@ -2,6 +2,9 @@
 #define ERROR_H
 
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
 
 typedef enum {
     ERR_OK = 0,         // No error
@@ -12,6 +15,7 @@ typedef enum {
 } dnsd_err;
 
 char *dnsd_strerror(dnsd_err code);
+void exitOnError(char *msg);
 
 #endif
 
