@@ -12,6 +12,7 @@ typedef enum {
     ERR_NOENT,          // No such file or directory
     ERR_PARSE_BADCNT,   // Bad value count
     ERR_PARSE_BADVAL,   // Bad value format
+    ERR_PARSE_BADOPT,   // Bad options for cmd
 } dnsd_err;
 
 char *dnsd_strerror(dnsd_err code);
