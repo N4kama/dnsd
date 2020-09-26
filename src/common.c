@@ -138,7 +138,11 @@ resource_record parse_rr(char **buffer)
 }
 
 
-// Translate a qname (series of label length, label)
+/**
+ * Translate a qname (series of field length and fields) to a domain name.
+ * @param qname: the qname to translate.
+ * @return the translated name, free it after use.
+ */
 char *qname_to_string(char *qname)
 {
     size_t label_length = 0;
@@ -179,8 +183,9 @@ char *qname_to_string(char *qname)
 
 
 /**
- * Free a mesaage m
- * @param m The message to free
+ * Free multiple resource records rr
+ * @param rr The resource records to free
+ * @param nrecords, the number of records
  */
 void free_rr(resource_record *rr, size_t nrecords)
 {
@@ -193,6 +198,10 @@ void free_rr(resource_record *rr, size_t nrecords)
     free(rr);
 }
 
+/**
+ * Free a message m
+ * @param m The message to free
+ */
 void free_message(message m)
 {
     size_t i;
@@ -206,6 +215,16 @@ void free_message(message m)
     free_rr(m.authority, m.header.nscount);
     free_rr(m.additional, m.header.arcount);
     return;
+}
+
+/**
+ * Free a message pointer m
+ * @param m The message pointer to free
+ */
+void free_message_ptr(message *m)
+{
+    free_message(*m);
+    free(m);
 }
 
 int copy_rr(char **out, resource_record rr)
@@ -233,6 +252,12 @@ uint64_t rr_length(resource_record rr)
     return rr_len;
 }
 
+/**
+ * Compute the total length of a message
+ * Allows to get the size of the memory to alloc for the raw buffer
+ * @param: m message structure to compute the size of
+ * @return the size of the message
+ */
 uint64_t message_length(message m)
 {
     size_t i;
