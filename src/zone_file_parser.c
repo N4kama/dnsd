@@ -1,3 +1,5 @@
+#include <ctype.h>
+
 #include "zone_file_parser.h"
 
 // strchr() that support escaped searched char
@@ -6,7 +8,6 @@ char *strechr(char *s, char c)
     for (uint64_t i = 0; s[i]; i++)
         if (s[i] == c && (i == 0 || s[i - 1] != '\\'))
             return s + i;
-
     return NULL;
 }
 
@@ -20,6 +21,7 @@ uint32_t strcount(char *s, char c)
     return count;
 }
 
+// string to QTYPE
 uint16_t str2type(char *str)
 {
     if (strcmp(str, "A") == 0)
@@ -33,6 +35,36 @@ uint16_t str2type(char *str)
     if (strcmp(str, "TXT") == 0)
         return TYPE_TXT;
     return 0;
+}
+
+// check if domain is well-formed
+uint8_t sanitize_name(char *name)
+{
+    if (strlen(name) > MAX_NAME_LENGTH)
+        return 0;
+
+    char buffer[MAX_NAME_LENGTH + 1];
+    strncpy(buffer, name, MAX_NAME_LENGTH);
+
+    char *token = strtok(buffer, ".");
+    while (token != NULL)
+    {
+        for (uint8_t i = 0; token[i]; i++)
+            if (i > MAX_LABEL_LENGTH || (!isalnum(token[i]) && token[i] != '-'))
+                return 0;
+        token = strtok(NULL, ".");
+    }
+
+    return 1;
+}
+
+// unescape a char in the given string
+void str_unescape(char *s, char c)
+{
+    for (; *s; s++)
+        if (s[0] == '\\' && s[1] == c)
+            for (uint64_t i = 0; s[i]; i++)
+                s[i] = s[i + 1];
 }
 
 dnsd_err zone_parse(char *filename, zone_array **zones)
@@ -85,8 +117,6 @@ dnsd_err zone_parse(char *filename, zone_array **zones)
         char *endl = strechr(cursor, '\n');
         *endl = 0;
 
-        // note: escaped char in other than the 4th value breaks everything
-
         if (strcount(cursor, ';') != 3)
         {
             zone_free(*zones);
@@ -98,6 +128,14 @@ dnsd_err zone_parse(char *filename, zone_array **zones)
         // parse name
         char *value_end = strechr(cursor, ';');
         *value_end = 0;
+        if (!sanitize_name(cursor))
+        {
+            zone_free(*zones);
+            free(file_content);
+            fclose(file);
+            return ERR_PARSE_BADVAL;
+        }
+
         (*zones)->array[i].name = malloc(value_end - cursor + 1);
         if ((*zones)->array[i].name == NULL)
         {
@@ -113,15 +151,30 @@ dnsd_err zone_parse(char *filename, zone_array **zones)
         value_end = strechr(cursor, ';');
         *value_end = 0;
         (*zones)->array[i].type = str2type(cursor);
+        if ((*zones)->array[i].type == 0)
+        {
+            zone_free(*zones);
+            free(file_content);
+            fclose(file);
+            return ERR_PARSE_BADVAL;
+        }
         cursor = value_end + 1;
 
         // parse TTL
         value_end = strechr(cursor, ';');
         *value_end = 0;
+        if (strlen(cursor) == 0)
+        {
+            zone_free(*zones);
+            free(file_content);
+            fclose(file);
+            return ERR_PARSE_BADVAL;
+        }
         (*zones)->array[i].ttl = atoi(cursor);
         cursor = value_end + 1;
 
         // parse content
+        str_unescape(cursor, ';');
         (*zones)->array[i].content = malloc(endl - cursor + 1);
         if ((*zones)->array[i].content == NULL)
         {

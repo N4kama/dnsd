@@ -12,7 +12,7 @@ int main(void) // int argc, char *argv[])
     code = zone_parse("samples/dnsd.zone", &zones);
     if (code != ERR_OK)
     {
-        printf("zone_parse failed with: %s\n", dnsd_strerror(code));
+        printf("zone file parsing: failed with: %s\n", dnsd_strerror(code));
         return code;
     }
 

@@ -9,6 +9,9 @@
 #include "common.h"
 #include "error.h"
 
+#define MAX_NAME_LENGTH     253
+#define MAX_LABEL_LENGTH    63
+
 typedef struct {
     char        *name;
     uint16_t    type;
