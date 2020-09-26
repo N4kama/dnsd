@@ -47,18 +47,28 @@ char *process_request(char* raw, uint64_t *out_size, zone_array *zones)
 
 void response_handle(message *m, zone_array *zones)
 {
-    m->header.qr =        1;
-    m->header.aa =        1;
-    m->header.rd =        0;
-    m->header.ra =        0;
-    m->header.z =         0;
+    m->header.qr = 1;
+    m->header.aa = 1;
+    m->header.rd = 0;
+    m->header.ra = 0;
+    m->header.z = 0;
     if (m->header.rcode != 0)
         return;
 
     m->header.tc =        0; //FIXME
 
     zone *zone = response_lookup(m->question, zones);
-    (void) zone;
+    if (zone == NULL)
+        m->header.rcode = 5;
+
+    m->answer = malloc(sizeof(resource_record));
+    m->answer->name = ;
+    m->answer->type = ;
+    m->answer->clss = ;
+    m->answer->ttl = ;
+    m->answer->rdlength = ;
+    m->answer->rdata = ;
+
 }
 
 

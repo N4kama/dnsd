@@ -14,6 +14,15 @@
 #define TYPE_SOA    6
 #define TYPE_TXT    16
 
+
+// RCODE
+#define RCODE_NO_ERROR      0
+#define RCODE_FORM_ERROR    1
+#define RCODE_SERVER_FAIL   2
+#define RCODE_NXDOMAIN      3
+#define RCODE_NOTIMP        4
+#define RCODE_REFUSED       5
+
 typedef struct __packed
 {
     uint16_t    id;
