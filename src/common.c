@@ -110,6 +110,11 @@ char *qname_to_string(char *qname)
     return name;
 }
 
+
+/**
+ * Free a mesaage m
+ * @param m The message to free
+ */
 void free_message(message m)
 {
     //FIXME
@@ -117,13 +122,27 @@ void free_message(message m)
     return;
 }
 
-char* message_to_raw(message m)
+/**
+ * Inverse funciton of parse message
+ * Don't forget to free me!
+ * @param m The message to RAWify
+ * @param out pointer to the RAW message
+ * @return Size of the *out buffer
+ */
+uint64_t message_to_raw(message m, char **out)
 {
     //FIXME
     (void) m;
-    return NULL;
+    (void) out;
+    return 0;
 }
 
+
+/**
+ * Takes a string and returns a qname string
+ * @param s The string to transform
+ * @return The requested qname string
+ */
 char *string_to_qname(char *s)
 {
     char *qname = NULL;
