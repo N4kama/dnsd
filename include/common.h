@@ -26,7 +26,7 @@
 typedef struct __packed
 {
     uint16_t    id;
-    union 
+    union
     {
         uint16_t bytes;
         struct
@@ -61,11 +61,6 @@ typedef struct __packed
     uint16_t    clss;
     uint32_t    ttl;
     uint16_t    rdlength;
-
-    /*
-     * Since the format of this changes depending on the TYPE, we might
-     *  want to define a struct for rdata
-     */
     char        *rdata;
 } resource_record;
 
@@ -81,6 +76,7 @@ typedef struct __packed
 int parse_message(char *buffer, message *msg);
 uint64_t message_to_raw(message m, char **out);
 void free_message(message m);
+void free_message_ptr(message *m);
 char *qname_to_string(char *qname);
 char *string_to_qname(char *s);
 void display_header(header *h);
