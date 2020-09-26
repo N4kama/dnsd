@@ -30,7 +30,12 @@ int main(int argc, char **argv)
     zone_print(zones);
 
     printf("-------------------\nStarting DNS server\n-------------------\n");
-    start_server(zones);
+    code = start_server(zones);
+    if (code != ERR_OK)
+    {
+        sprintf(stderr, "ERROR: %s\n", dnsd_strerror(code));
+        return code;
+    }
 
     zone_free(zones);
 

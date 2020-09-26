@@ -158,8 +158,8 @@ dnsd_err start_server(zone_array *p_zones)
 {
     (void) p_zones;
 
-    dnsd_err errcode;   /* error code from create_socket */
-    int clientSockfd;         /* client socket returned by server */
+    dnsd_err errcode;           /* error code from create_socket */
+    int clientSockfd;           /* client socket returned by server */
 
     /* Handling incoming client connections */
     errcode = create_socket(&clientSockfd, AF_INET, SOCK_STREAM);
