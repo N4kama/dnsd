@@ -74,9 +74,9 @@ message parse_message(char *buffer)
 // Translate a qname (series of label length, label)
 char *qname_to_string(char *qname)
 {
-    int label_length = 0;
-    int total_length = 0;
-    int nlabels = 0;
+    size_t label_length = 0;
+    size_t total_length = 0;
+    size_t nlabels = 0;
     char *base = qname;
 
     char *name = NULL;
