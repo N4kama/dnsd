@@ -1,15 +1,17 @@
 #ifndef _OPTION_PARSER_H_
 #define _OPTION_PARSER_H_
 
-#include <stdint.h>
+#include <stdlib.h>
+#include "error.h"
 
-typedef struct
+typedef dnsd_err (*handler)(int argc, char **argv, int *i);
+
+struct options
 {
-    uint8_t v4;
-    uint8_t v6;
-    uint8_t port;
-    //FIXME
-} opt;
+    handler     handle;         /*!< handle function*/
+    const char  *cmd_name;      /*!< name of the command*/
+};
 
+dnsd_err    parse_options(int argc, char **argv);
 
 #endif /* ! OPTION_PARSER_H */
