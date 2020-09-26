@@ -110,7 +110,6 @@ dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
     }
 }
 
-
 /**
  * Receive requests from client and respond
  * @param clientSockfd Client's socket to manage
@@ -140,14 +139,13 @@ dnsd_err handler(zone_array *p_zones, int clientSockfd)
         buf[n] = '\0';
         printf(buf); //DEBUG
 
-        //call handler
+        //call request_handler
         //send(serverSockfd, process_request(buf, p_zones));
     }
 
     close(clientSockfd);
     return ERR_OK;
 }
-
 
 /**
  * Start the DNSserver
@@ -161,8 +159,22 @@ dnsd_err start_server(zone_array *p_zones)
     dnsd_err errcode;           /* error code from create_socket */
     int clientSockfd;           /* client socket returned by server */
 
-    /* Handling incoming client connections */
-    errcode = create_socket(&clientSockfd, AF_INET, SOCK_STREAM);
+    /* Creating socket for TCP and UDP connections */
+    switch (fork())
+    {
+        case -1:
+            return ERR_FORK;
+        case 0:
+            /* Child process    - UDP */
+            errcode = create_socket(&clientSockfd, AF_INET, SOCK_DGRAM);
+            break;
+        default:
+            /* Parent process   - TCP */
+            errcode = create_socket(&clientSockfd, AF_INET, SOCK_STREAM);
+            break;
+    }
+
+    /* Handling connections */
     if (errcode == ERR_OK)
     {
         /* Q/A with client */
