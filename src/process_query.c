@@ -58,6 +58,7 @@ void response_handle(message *m, zone_array *zones)
     m->header.tc =        0; //FIXME
 
     zone *zone = response_lookup(m->question, zones);
+    (void) zone;
 }
 
 

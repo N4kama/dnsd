@@ -3,4 +3,5 @@
 
 # Build
 dnsd
+unit
 *.o
