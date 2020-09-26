@@ -10,6 +10,6 @@ char *process_request(char* raw, uint64_t *out_size, zone_array *zones);
 
 void response_handle(message *m, zone_array *zones);
 
-zone *response_lookup(question *question, zone_array *zones);
+int qname_cmp(char *qname, char *str2);
 
 #endif /* ! _PROCESS_QUERY_H_ */
