@@ -1,5 +1,5 @@
-#ifndef MEMORY_H
-#define MEMORY_H
+#ifndef ERROR_H
+#define ERROR_H
 
 #include <stdint.h>
 
