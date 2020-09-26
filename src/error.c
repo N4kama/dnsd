@@ -14,6 +14,8 @@ char *dnsd_strerror(dnsd_err code)
             return "Bad value count in zone file";
         case ERR_PARSE_BADVAL:
             return "Bad value format in zone file";
+        case ERR_PARSE_BADOPT:
+            return "Bad command line options";
         case ERR_SOCK_OPEN:
             return "Opening socket failed";
         case ERR_SOCK_BIND:
