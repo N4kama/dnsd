@@ -116,3 +116,10 @@ void free_message(message m)
     (void) m;
     return;
 }
+
+char* message_to_raw(message m)
+{
+    //FIXME
+    (void) m;
+    return NULL;
+}
