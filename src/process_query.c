@@ -1,12 +1,16 @@
+#include <stdint.h>
+
 #include "common.h"
 #include "process_query.h"
+#include "zone_file_parser.h"
 
 /**
  * Takes raw bytes in input and builds and return a raw answer
  * Don't forget to free !!!
  */
-char* process_request(char* buffer)
+uint64_t process_request(char* raw, char** out_buf, zone_array *p_zones);
 {
+    (void) p_zones;
 
     // Raw to message struct
     message input_msg = parse_message(char *buffer);
