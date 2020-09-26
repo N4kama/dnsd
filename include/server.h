@@ -4,16 +4,11 @@
 #include "common.h"
 #include "zone_file_parser.h" //TODO: Should the structs be moved in common.h ?
 
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <netdb.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#define TCP_MAX_CON 10
 
 int start_server(zone_array *p_zones);
+void handler(zone_array *p_zones, int clientSockfd);
+int create_socket(int sin_family, int type);
 
 #endif
 

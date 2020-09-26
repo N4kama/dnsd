@@ -3,10 +3,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "error.h"
 #include "common.h"
+
+//FIXME Main issue with this code right now is it assumes that all the
+// strings in the buffer have valid strings ending with a '\0'
 
 // As this is not supposed to be used except for some testing, this should not
 // be declared in a header
+
+resource_record parse_rr(char **buffer);
+
 void display_header(header *h)
 {
     printf("id: 0x%x\n", ntohs(h->id));
@@ -40,15 +47,18 @@ void display_question(question *q)
 
 
 // Parse a dns message (query or answer)
-message parse_message(char *buffer)
+int parse_message(char *buffer, message *msg)
 {
-    message msg;
     question *q = NULL;
+    resource_record *an = NULL;
+    resource_record *ns = NULL;
+    resource_record *ar = NULL;
     char *content;
     header *head = (header *)buffer;
 
-    display_header(head);
     q = calloc(head->qdcount, sizeof(question));
+    if (q == NULL)
+        return ERR_NOMEM;
 
     content = (buffer + sizeof(header));
 
@@ -56,27 +66,86 @@ message parse_message(char *buffer)
     for (int i = 0; i < head->qdcount; i++)
     {
         q[i].qname = calloc(strlen(content), sizeof(char));
+        if (q[i].qname == NULL)
+            return ERR_NOMEM;
         strncpy(q[i].qname, content, strlen(content));
         content += strlen(content) + 1;
         q[i].qtype = *(uint16_t *)content;
-        content = (char *)((uint16_t *)content) + 1;
+        content += sizeof(uint16_t) + 1;
         q[i].qclass = *(uint16_t *)content;
     }
 
-    display_question(q);
 
-    msg.header = *head;
-    msg.question = q;
-    return msg;
+    an = calloc(head->ancount, sizeof(resource_record));
+    if (an == NULL)
+        return ERR_NOMEM;
+
+    for (int i = 0; i < head->ancount; i++)
+    {
+        an[i] = parse_rr(&content);
+    }
+
+    ns = calloc(head->nscount, sizeof(resource_record));
+    if (ns == NULL)
+        return ERR_NOMEM;
+
+    for (int i = 0; i < head->nscount; i++)
+    {
+        ns[i] = parse_rr(&content);
+    }
+
+    ar = calloc(head->arcount, sizeof(resource_record));
+    if (ar == NULL)
+        return ERR_NOMEM;
+
+    for (int i = 0; i < head->arcount; i++)
+    {
+        ar[i] = parse_rr(&content);
+    }
+
+    msg->header = *head;
+    msg->question = q;
+    msg->answer = an;
+    msg->authority = ns;
+    msg->additional = ar;
+    return ERR_OK;
+}
+
+resource_record parse_rr(char **buffer)
+{
+    resource_record rr;
+    char *name = NULL;
+    char *data = NULL;
+
+    name = calloc(strlen(*buffer), sizeof(char));
+
+    strncpy(name, *buffer, strlen(*buffer));
+    rr.name = name;
+    *buffer += strlen(*buffer) + 1;
+
+    rr.type = (uint16_t)**buffer;
+    rr.clss = (uint16_t)**buffer;
+    rr.ttl = (uint32_t)**buffer;
+    rr.rdlength = (uint16_t)**buffer;
+
+    data = calloc(strlen(*buffer), sizeof(char));
+    strncpy(data, *buffer, strlen(*buffer));
+    rr.rdata = data;
+
+    return rr;
 }
 
 
-// Translate a qname (series of label length, label)
+/**
+ * Translate a qname (series of field length and fields) to a domain name.
+ * @param qname: the qname to translate.
+ * @return the translated name, free it after use.
+ */
 char *qname_to_string(char *qname)
 {
-    int label_length = 0;
-    int total_length = 0;
-    int nlabels = 0;
+    size_t label_length = 0;
+    size_t total_length = 0;
+    size_t nlabels = 0;
     char *base = qname;
 
     char *name = NULL;
@@ -108,4 +177,176 @@ char *qname_to_string(char *qname)
     name = name_base;
 
     return name;
+}
+
+
+/**
+ * Free multiple resource records rr
+ * @param rr The resource records to free
+ * @param nrecords, the number of records
+ */
+void free_rr(resource_record *rr, size_t nrecords)
+{
+    size_t i = 0;
+    for (i = 0; i < nrecords; i++)
+    {
+        free(rr[i].name);
+        free(rr[i].rdata);
+    }
+    free(rr);
+}
+
+/**
+ * Free a message m
+ * @param m The message to free
+ */
+void free_message(message m)
+{
+    size_t i;
+    for (i = 0; i < m.header.qdcount; i++)
+    {
+        free(m.question[i].qname);
+    }
+    free(m.question);
+
+    free_rr(m.answer, m.header.ancount);
+    free_rr(m.authority, m.header.nscount);
+    free_rr(m.additional, m.header.arcount);
+    return;
+}
+
+/**
+ * Free a message pointer m
+ * @param m The message pointer to free
+ */
+void free_message_ptr(message *m)
+{
+    free_message(*m);
+    free(m);
+}
+
+int copy_rr(char **out, resource_record rr)
+{
+    memcpy(*out, rr.name, strlen(rr.name));
+    *out += strlen(rr.name) + 1;
+    memcpy(*out, &rr.type, sizeof(uint16_t));
+    *out += sizeof(uint16_t);
+    memcpy(*out, &rr.clss, sizeof(uint16_t));
+    *out += sizeof(uint16_t);
+    memcpy(*out, &rr.ttl, sizeof(uint32_t));
+    *out += sizeof(uint32_t);
+    memcpy(*out, &rr.rdlength, sizeof(uint16_t));
+    *out += sizeof(uint16_t);
+    memcpy(*out, rr.rdata, rr.rdlength);
+    *out += rr.rdlength;
+
+    return 0;
+}
+
+uint64_t rr_length(resource_record rr)
+{
+    uint64_t rr_len = 3 * sizeof(uint16_t) + sizeof(uint32_t) + rr.rdlength;
+    rr_len += strlen(rr.name) + 1;
+    return rr_len;
+}
+
+/**
+ * Compute the total length of a message
+ * Allows to get the size of the memory to alloc for the raw buffer
+ * @param: m message structure to compute the size of
+ * @return the size of the message
+ */
+uint64_t message_length(message m)
+{
+    size_t i;
+    uint64_t len = sizeof(header);
+
+    for (i = 0; i < m.header.qdcount; i++)
+        len += 2 * sizeof(uint16_t) + strlen(m.question[i].qname) + 1;
+
+    for (i = 0; i < m.header.ancount; i++)
+        len += rr_length(m.answer[i]);
+    for (i = 0; i < m.header.nscount; i++)
+        len += rr_length(m.authority[i]);
+    for (i = 0; i < m.header.arcount; i++)
+        len += rr_length(m.additional[i]);
+    return len;
+}
+
+/**
+ * Inverse funciton of parse message
+ * Don't forget to free me!
+ * @param m The message to RAWify
+ * @param out pointer to the RAW message
+ * @return Size of the *out buffer
+ */
+uint64_t message_to_raw(message m, char **out)
+{
+    size_t i;
+    size_t len = message_length(m);
+
+    *out = calloc(len, sizeof(char));
+    memcpy(*out, &(m.header), sizeof(header));
+
+    *out += sizeof(header);
+
+   for (i = 0; i < m.header.qdcount; i++)
+   {
+        memcpy(*out, m.question[i].qname, strlen(m.question[i].qname));
+        *out += strlen(m.question[i].qname) + 1;
+        memcpy(*out, &m.question[i].qtype, sizeof(uint16_t));
+        *out += sizeof(uint16_t);
+        memcpy(*out, &m.question[i].qclass, sizeof(uint16_t));
+        *out += sizeof(uint16_t);
+   }
+
+   for (i = 0; i < m.header.ancount; i++)
+   {
+        copy_rr(out, m.answer[i]);
+   }
+
+   for (i = 0; i < m.header.nscount; i++)
+   {
+        copy_rr(out, m.authority[i]);
+   }
+
+   for (i = 0; i < m.header.arcount; i++)
+   {
+        copy_rr(out, m.additional[i]);
+   }
+
+    return len;
+}
+
+
+/**
+ * Takes a string and returns a qname string
+ * @param s The string to transform
+ * @return The requested qname string
+ */
+char *string_to_qname(char *s)
+{
+    char *qname = NULL;
+    size_t i;
+    size_t j;
+    size_t total_length = 0;
+    char label_length = 0;
+
+    for (i = 0; s[i]; i++)
+    {
+        if (s[i] != '.')
+        {
+            label_length++;
+        }
+        else
+        {
+            qname = realloc(qname, sizeof(char) * label_length + 1);
+            qname[i - label_length] = label_length;
+            for (j = i - label_length; j < i; j++)
+                qname[j + 1] = s[j];
+            label_length = 0;
+        }
+        total_length++;
+    }
+    return qname;
 }
