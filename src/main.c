@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 
     printf("-------------------\nParsing zone file\n-------------------\n");
     zone_array *zones;
-    code = zone_parse("samples/dnsd.zone", &zones);
+    code = zone_parse(get_file(), &zones);
     if (code != ERR_OK)
     {
         fprintf(stderr, "zone file parsing failed with: %s\n", dnsd_strerror(code));
