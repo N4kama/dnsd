@@ -31,5 +31,5 @@ all: $(BIN)
 
 clean:
 	$(RM) $(OBJ)
-	$(RM) $(BIN)
-	$(RM) unit
+	$(RM) src/main.o $(BIN)
+	$(RM) tests/unit_tests/unit.o unit
