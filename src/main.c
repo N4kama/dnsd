@@ -17,11 +17,12 @@ int main(int argc, char **argv)
             return code;
     }
 
+    printf("-------------------\nParsing zone file\n-------------------\n");
     zone_array *zones;
     code = zone_parse("samples/dnsd.zone", &zones);
     if (code != ERR_OK)
     {
-        printf("zone file parsing: failed with: %s\n", dnsd_strerror(code));
+        fprintf(stderr, "zone file parsing failed with: %s\n", dnsd_strerror(code));
         return code;
     }
 
@@ -31,7 +32,7 @@ int main(int argc, char **argv)
     code = start_server(zones);
     if (code != ERR_OK)
     {
-        fprintf(stderr, "ERROR: %s\n", dnsd_strerror(code));
+        fprintf(stderr, "start server failed with: %s\n", dnsd_strerror(code));
         return code;
     }
 
