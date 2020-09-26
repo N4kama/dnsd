@@ -5,7 +5,8 @@ SRC = \
 	  src/error.c \
 	  src/main.c \
 	  src/zone_file_parser.c \
-	  src/server.c
+	  src/server.c \
+	  src/common/common.c
 
 OBJ = $(SRC:.c=.o)
 

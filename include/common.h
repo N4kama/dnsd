@@ -56,11 +56,14 @@ typedef struct __packed
 typedef struct __packed
 {
     header          header;
-    question        question;
-    resource_record answer;
-    resource_record authority;
-    resource_record additional;
+    question        *question;
+    resource_record *answer;
+    resource_record *authority;
+    resource_record *additional;
 } message;
+
+message parse_message(char *buffer);
+char *qname_to_string(char *qname);
 
 #endif
 
