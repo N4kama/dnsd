@@ -105,8 +105,10 @@ void response_handle(message *m, zone_array *zones)
         m->authority->type = m->question->qtype;
         m->authority->clss = m->question->qclass;
         m->authority->ttl = best_soa->ttl;
-        //m->authority->rdlength = ; //FIXME
-        //m->authority->rdata = ; //FIXME
+        uint16_t rsize;
+        char *rdata = rdata_from_type(TYPE_SOA, best_soa, &rsize);
+        m->authority->rdata = rdata;
+        m->authority->rdlength = rsize;
     }
     
     // TODO: Check tc:indique si la réponse dépasse la taille maximum d’un
@@ -114,6 +116,7 @@ void response_handle(message *m, zone_array *zones)
     // if (XXX)
     //  m->header.tc = 1;
 }
+
 
 /*
  * Retrun nb of matching domains
@@ -141,4 +144,36 @@ int qname_cmp(char *qname, char *str2)
         return -1;
 
     return matching;
+}
+
+/**
+ * Modify *rdata and *rsize depending on type and zone given
+ * Do not forget to free return pointer
+ */
+char *rdata_from_type(int type, zone *z, uint16_t *rsize)
+{
+    char *rdata = NULL;
+    switch(type)
+    {
+        case TYPE_A:
+            break;
+        case TYPE_AAAA:
+            break;
+        case TYPE_CNAME:
+            break;
+        case TYPE_MX:
+            break;
+        case TYPE_NS:
+            break;
+        case TYPE_SOA:
+            break;
+        case TYPE_TXT:
+            *rsize = strlen(z->content);
+            rdata = malloc(*rsize);
+            strncpy(rdata, z->content, *rsize);
+            return rdata;
+    };
+
+    // Not handled
+    return NULL;
 }

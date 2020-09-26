@@ -12,4 +12,6 @@ void response_handle(message *m, zone_array *zones);
 
 int qname_cmp(char *qname, char *str2);
 
+char *rdata_from_type(int type, zone *z, uint16_t *rsize);
+
 #endif /* ! _PROCESS_QUERY_H_ */
