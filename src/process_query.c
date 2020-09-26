@@ -24,25 +24,24 @@ uint8_t is_type_good(uint16_t type, uint16_t zone_type)
  * @param p_zones The zone file to answer the client with
  * @return Size of *out_buf
  */
-char *process_request(char* raw, int *out_size, zone_array *zones)
+char *process_request(char* raw, uint64_t *out_size, zone_array *zones)
 {
     // Raw to message struct
     message *input_msg = calloc(1, sizeof(message));
     int ret = parse_message(raw, input_msg);
     if (ret != 0) // An error happened
-        input_msg->header.rcode = 1
+        input_msg->header.rcode = 1;
 
     // Process
     response_handle(input_msg, zones);
 
     // message struct to raw
     char* output_raw;
-    uint64_t out_size = message_to_raw(*input_msg, &output_raw);
+    *out_size = message_to_raw(*input_msg, &output_raw);
 
     free_message(*input_msg);
     free(input_msg);
 
-    *out_size = out_size;
     return output_raw;
 }
 
@@ -66,7 +65,7 @@ void response_handle(message *m, zone_array *zones)
  * Builds a message struct out of the given parameters
  * @return A new response message
  */
-zone *response_lookup(question question, zone_array *zones)
+zone *response_lookup(question *question, zone_array *zones)
 {
     uint8_t isName = 0;
     uint8_t isType = 0;
@@ -78,8 +77,8 @@ zone *response_lookup(question question, zone_array *zones)
         // nom non-existant: check if zone name is substring of name, return SOA
         // empty non terminal: return SOA ?
         // zone inconnue: return NULL
-        isName = is_name_good(question.qname, zones->array[i].name);
-        isType = is_type_good(question.qtype, zones->array[i].type);
+        isName = is_name_good(question->qname, zones->array[i].name);
+        isType = is_type_good(question->qtype, zones->array[i].type);
 
         if (isName && isType)
             return &zones->array[i];
