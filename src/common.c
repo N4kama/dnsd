@@ -16,7 +16,7 @@ resource_record parse_rr(char **buffer);
 
 void display_header(header *h)
 {
-    printf("id: 0x%x\n", ntohs(h->id));
+    printf("id: 0x%x\n", h->id);
     printf("qr %x\n", h->qr);
     printf("opcode %x\n", h->opcode);
     printf("aa %x\n", h->aa);
@@ -55,11 +55,6 @@ int parse_message(char *buffer, message *msg)
     resource_record *ar = NULL;
     char *content;
     header *head = (header *)buffer;
-    head->bytes = ntohs(head->bytes);
-    head->qdcount = ntohs(head->qdcount);
-    head->ancount = ntohs(head->ancount);
-    head->nscount = ntohs(head->nscount);
-    head->arcount = ntohs(head->arcount);
 
     q = calloc(head->qdcount, sizeof(question));
     if (q == NULL)
@@ -110,6 +105,12 @@ int parse_message(char *buffer, message *msg)
     }
 
     msg->header = *head;
+    msg->header.id = ntohs(head->id);
+    msg->header.bytes = ntohs(head->bytes);
+    msg->header.qdcount = ntohs(head->qdcount);
+    msg->header.ancount = ntohs(head->ancount);
+    msg->header.nscount = ntohs(head->nscount);
+    msg->header.arcount = ntohs(head->arcount);
     msg->question = q;
     msg->answer = an;
     msg->authority = ns;
@@ -131,7 +132,7 @@ resource_record parse_rr(char **buffer)
 
     rr.type = ntohs((uint16_t)**buffer);
     rr.clss = ntohs((uint16_t)**buffer);
-    rr.ttl = ntohs((uint32_t)**buffer);
+    rr.ttl = ntohl((uint32_t)**buffer);
     rr.rdlength = ntohs((uint16_t)**buffer);
 
     data = calloc(strlen(*buffer), sizeof(char));
@@ -235,13 +236,13 @@ int copy_rr(char **out, resource_record rr)
 {
     memcpy(*out, rr.name, strlen(rr.name));
     *out += strlen(rr.name) + 1;
-    memcpy(*out, &rr.type, sizeof(uint16_t));
+    **out = htons(rr.type);
     *out += sizeof(uint16_t);
-    memcpy(*out, &rr.clss, sizeof(uint16_t));
+    **out = htons(rr.clss);
     *out += sizeof(uint16_t);
-    memcpy(*out, &rr.ttl, sizeof(uint32_t));
+    **out = htonl(rr.ttl);
     *out += sizeof(uint32_t);
-    memcpy(*out, &rr.rdlength, sizeof(uint16_t));
+    **out = htons(rr.rdlength);
     *out += sizeof(uint16_t);
     memcpy(*out, rr.rdata, rr.rdlength);
     *out += rr.rdlength;
@@ -290,36 +291,49 @@ uint64_t message_to_raw(message m, char **out)
 {
     size_t i;
     size_t len = message_length(m);
+    uint16_t qdc = m.header.qdcount;
+    uint16_t anc = m.header.ancount;
+    uint16_t nsc = m.header.nscount;
+    uint16_t arc = m.header.arcount;
 
     *out = calloc(len, sizeof(char));
-    memcpy(*out, &(m.header), sizeof(header));
+    char *base = *out;
 
+    m.header.id = htons(m.header.id);
+    m.header.bytes = htons(m.header.bytes);
+    m.header.qdcount = htons(m.header.qdcount);
+    m.header.ancount = htons(m.header.ancount);
+    m.header.nscount = htons(m.header.nscount);
+    m.header.arcount = htons(m.header.arcount);
+
+    memcpy(*out, &(m.header), sizeof(header));
     *out += sizeof(header);
 
-   for (i = 0; i < m.header.qdcount; i++)
-   {
+    for (i = 0; i < qdc; i++)
+    {
         memcpy(*out, m.question[i].qname, strlen(m.question[i].qname));
         *out += strlen(m.question[i].qname) + 1;
-        memcpy(*out, &m.question[i].qtype, sizeof(uint16_t));
+        *(uint16_t*)*out = htons(m.question[i].qtype);;
         *out += sizeof(uint16_t);
-        memcpy(*out, &m.question[i].qclass, sizeof(uint16_t));
+        *(uint16_t*)*out = htons(m.question[i].qclass);
         *out += sizeof(uint16_t);
-   }
+    }
 
-   for (i = 0; i < m.header.ancount; i++)
-   {
+    for (i = 0; i < anc; i++)
+    {
         copy_rr(out, m.answer[i]);
-   }
+    }
 
-   for (i = 0; i < m.header.nscount; i++)
-   {
+    for (i = 0; i < nsc; i++)
+    {
         copy_rr(out, m.authority[i]);
-   }
+    }
 
-   for (i = 0; i < m.header.arcount; i++)
-   {
+    for (i = 0; i < arc; i++)
+    {
         copy_rr(out, m.additional[i]);
-   }
+    }
+    *out = base;
 
     return len;
 }
