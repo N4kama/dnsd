@@ -33,7 +33,7 @@ int main(int argc, char **argv)
     code = start_server(zones);
     if (code != ERR_OK)
     {
-        sprintf(stderr, "ERROR: %s\n", dnsd_strerror(code));
+        fprintf(stderr, "ERROR: %s\n", dnsd_strerror(code));
         return code;
     }
 
