@@ -12,7 +12,7 @@ static opt g_opt = {
     .v6 = { .s6_addr = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01" },    // ::1
     .p_udp = 53,
     .p_tcp = 53,
-    .file = NULL
+    .file = "/etc/dnsd/dnsd.zone"
 };
 
 void set_file(char *path)
