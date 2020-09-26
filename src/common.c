@@ -109,3 +109,10 @@ char *qname_to_string(char *qname)
 
     return name;
 }
+
+void free_message(message m)
+{
+    //FIXME
+    (void) m;
+    return;
+}

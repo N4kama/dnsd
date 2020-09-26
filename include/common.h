@@ -63,6 +63,7 @@ typedef struct __packed
 } message;
 
 message parse_message(char *buffer);
+void free_message(message m);
 char *qname_to_string(char *qname);
 
 #endif
