@@ -197,6 +197,48 @@ void free_message(message m)
     return;
 }
 
+int copy_rr(char **out, resource_record rr)
+{
+    memcpy(*out, rr.name, strlen(rr.name));
+    *out += strlen(rr.name) + 1;
+    memcpy(*out, &rr.type, sizeof(uint16_t));
+    *out += sizeof(uint16_t);
+    memcpy(*out, &rr.clss, sizeof(uint16_t));
+    *out += sizeof(uint16_t);
+    memcpy(*out, &rr.ttl, sizeof(uint32_t));
+    *out += sizeof(uint32_t);
+    memcpy(*out, &rr.rdlength, sizeof(uint16_t));
+    *out += sizeof(uint16_t);
+    memcpy(*out, rr.rdata, rr.rdlength);
+    *out += rr.rdlength;
+
+    return 0;
+}
+
+uint64_t rr_length(resource_record rr)
+{
+    uint64_t rr_len = 3 * sizeof(uint16_t) + sizeof(uint32_t) + rr.rdlength;
+    rr_len += strlen(rr.name) + 1;
+    return rr_len;
+}
+
+uint64_t message_length(message m)
+{
+    size_t i;
+    uint64_t len = sizeof(header);
+
+    for (i = 0; i < m.header.qdcount; i++)
+        len += 2 * sizeof(uint16_t) + strlen(m.question[i].qname) + 1;
+
+    for (i = 0; i < m.header.ancount; i++)
+        len += rr_length(m.answer[i]);
+    for (i = 0; i < m.header.nscount; i++)
+        len += rr_length(m.authority[i]);
+    for (i = 0; i < m.header.arcount; i++)
+        len += rr_length(m.additional[i]);
+    return len;
+}
+
 /**
  * Inverse funciton of parse message
  * Don't forget to free me!
@@ -206,10 +248,40 @@ void free_message(message m)
  */
 uint64_t message_to_raw(message m, char **out)
 {
-    //FIXME
-    (void) m;
-    (void) out;
-    return 0;
+    size_t i;
+    size_t len = message_length(m);
+
+    *out = calloc(len, sizeof(char));
+    memcpy(*out, &(m.header), sizeof(header));
+
+    *out += sizeof(header);
+
+   for (i = 0; i < m.header.qdcount; i++)
+   {
+        memcpy(*out, m.question[i].qname, strlen(m.question[i].qname));
+        *out += strlen(m.question[i].qname) + 1;
+        memcpy(*out, &m.question[i].qtype, sizeof(uint16_t));
+        *out += sizeof(uint16_t);
+        memcpy(*out, &m.question[i].qclass, sizeof(uint16_t));
+        *out += sizeof(uint16_t);
+   }
+
+   for (i = 0; i < m.header.ancount; i++)
+   {
+        copy_rr(out, m.answer[i]);
+   }
+
+   for (i = 0; i < m.header.nscount; i++)
+   {
+        copy_rr(out, m.authority[i]);
+   }
+
+   for (i = 0; i < m.header.arcount; i++)
+   {
+        copy_rr(out, m.additional[i]);
+   }
+
+    return len;
 }
 
 
