@@ -8,8 +8,8 @@
 #include "options.h"
 
 static opt g_opt = {
-    .v4 = { .s_addr = 0 },
-    .v6 = { 0 },
+    .v4 = { .s_addr = 16777343 },                                                               // 127.0.0.1
+    .v6 = { .s6_addr = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01" },    // ::1
     .p_udp = 53,
     .p_tcp = 53,
     .file = NULL
