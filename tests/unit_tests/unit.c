@@ -12,6 +12,7 @@
 void test_display_header(void);
 void test_parse_header(void);
 void test_parse_and_write(void);
+void test_soa_parser(void);
 
 int main(int argc, char *argv[])
 {
@@ -24,6 +25,7 @@ int main(int argc, char *argv[])
     test_parse_header();
     test_parse_and_write();
 
+    test_soa_parser();
 }
 
 void test_display_header(void)
@@ -151,4 +153,31 @@ void test_parse_and_write(void)
     free_message_ptr(m);
 
     puts("test_parse_and_write OK");
+}
+
+void test_soa_parser(void)
+{
+    printf("------ Testing SOA RDATA parser ------\n\n");
+    uint16_t rsize;
+    zone z = {
+        .name       = "example.com",
+        .type       = TYPE_SOA,
+        .ttl        = 3600,
+        .content    = "ns0.example.com. postmaster.example.com. 2020092501 86400 3600 604800 3600"
+    };
+
+    char *rdata = soa_parse(&z, &rsize);
+    printf("\n");
+    printf("rsize: %u\n", rsize);
+    printf("mname: '%s'\n", rdata);
+    rdata += strlen(rdata) + 1;
+    printf("rname: '%s'\n", rdata);
+    rdata += strlen(rdata) + 1;
+    soa_rdata *sr = (soa_rdata *)rdata;
+    printf("serial: %u\n",  sr->serial);
+    printf("refresh: %d\n", sr->refresh);
+    printf("retry: %d\n",   sr->retry);
+    printf("expire: %d\n",  sr->expire);
+    printf("minimum: %u\n", sr->minimum);
+    printf("\n------   SOA RDATA parser OK    ------\n");
 }
