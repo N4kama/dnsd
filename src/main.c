@@ -11,9 +11,6 @@ int main(int argc, char **argv)
 {
     dnsd_err code;
 
-    if (argc < 2)
-        my_help(1, NULL, NULL);
-
     code = parse_options(argc, argv);
     if (code != ERR_OK)
         return code;

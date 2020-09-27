@@ -130,6 +130,7 @@ int count_dom(char *str)
  */
 void response_handle(message *m, zone_array *zones)
 {
+    init_answer(m);
     char *name = m->question->qname;
     uint16_t type = m->question->qtype;
     zone *soa = NULL;
