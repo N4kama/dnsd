@@ -93,7 +93,6 @@ int parse_message(char *buffer, message *msg)
         q[i].qclass = ntohs(*(uint16_t *)content);
         content += sizeof(uint16_t);
     }
-    printf("%x\n", *content);
 
 
     an = calloc(msg->header.ancount, sizeof(resource_record));
