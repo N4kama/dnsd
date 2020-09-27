@@ -31,6 +31,8 @@ char *rdata_from_type(int type, zone *z, uint16_t *rsize);
 
 int qname_cmp(char *str1, char *str2);
 
+int qname_cmp2(char *str1, char *str2);
+
 int count_dom(char *str);
 
 void response_handle(message *m, zone_array *zones);

@@ -53,7 +53,7 @@ void init_answer(message *m)
 
 int qname_cmp2(char *qname, char *str2)
 {
-    char *str1 = qname_to_str(qname);
+    char *str1 = qname_to_string(qname);
     int ret = qname_cmp(str1, str2);
     free(str1);
     return ret;
