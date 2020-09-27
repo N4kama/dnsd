@@ -184,35 +184,72 @@ dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
     }
 }
 
+dnsd_err handle_communication(zone_array *p_zones, int clientSockfd)
+{
+    (void) p_zones;
+
+    int n;                      /* input byte size */
+    char buf[1024];             /* input buffer */
+    //char *req_buf;              /* request buffer after parsing */
+    //uint64_t req_buf_size;      /* request buffer length after parsing */
+
+    /* receiving data from from a client */
+    n = recv(clientSockfd, buf, sizeof(buf)-1, 0);
+    if (n < 0)
+    {
+        close(clientSockfd);
+        return ERR_SOCK_RECV;
+    }
+    /* DEBUG PRINT (Comment Call req and Call res if needed) */
+    buf[n] = 0;
+    printf(buf);
+    /* DEBUG END*/
+
+    /* Calling request handler */
+    // req_buf = process_request(buf, &req_buf_size, p_zones);
+    // printf(req_buf); //DEBUG
+    // free(req_buf);
+
+    /* Calling response handler */
+    //FIXME
+
+    return ERR_OK;
+}
+
 /**
  * Receive requests from client and respond
  * @param clientSockfd Client's socket to manage
  * @param is_stream Is the given socket a TCP socket ?
  * @return: the dnsd_err code
  */
-dnsd_err handler(zone_array *p_zones, int clientSockfd)
+dnsd_err handler_tcp_udp(zone_array *p_zones, int clientSockfd)
 {
-    (void) p_zones;
+    dnsd_err code;                      /* error code */
+    int so_type;                        /* socket type */
+    socklen_t so_type_len;              /* socket type length */
 
-    char buf[1024];                 /* input buffer */
-    int n;                          /* input byte size */
-
-    /* request & response loop */
-    while (1)
+    /* Getting socket type : SOCK_STREAM | SOCK_DGRAM */
+    if (getsockopt(clientSockfd,
+        SOL_SOCKET, SO_TYPE, &so_type, &so_type_len) < 0)
     {
-        /* receiving data from from a client */
-        n = recv(clientSockfd, buf, sizeof(buf)-1, 0);
-        if (n < 0)
-        {
-            close(clientSockfd);
-            return ERR_SOCK_RECV;
-        }
-        buf[n] = 0;
-        printf(buf); //DEBUG
-
-        //call request_handler
-        //send(serverSockfd, process_request(buf, p_zones));
+        close(clientSockfd);
+        return ERR_PARSE_BADVAL;
     }
+
+    /* request & response */
+    if (so_type == SOCK_DGRAM)
+    {
+         while (1)
+        {
+            code = handle_communication(p_zones, clientSockfd);
+        }
+    }
+    else
+    {
+        code = handle_communication(p_zones, clientSockfd);
+    }
+
+    (void) code; //DELETEME
 
     close(clientSockfd);
     return ERR_OK;
@@ -225,8 +262,6 @@ dnsd_err handler(zone_array *p_zones, int clientSockfd)
  */
 dnsd_err start_server(zone_array *p_zones)
 {
-    (void) p_zones;
-
     dnsd_err errcode;           /* error code from create_socket */
     int clientSockfd;           /* client socket returned by server */
 
@@ -277,7 +312,7 @@ dnsd_err start_server(zone_array *p_zones)
     if (errcode == ERR_OK)
     {
         /* Q/A with client */
-        handler(p_zones, clientSockfd);
+        handler_tcp_udp(p_zones, clientSockfd);
         return ERR_OK;
     }
     return errcode;
