@@ -5,17 +5,18 @@
 #include "server.h"
 #include "option_parser.h"
 #include "options.h"
+#include "options_cmd.h"
 
 int main(int argc, char **argv)
 {
     dnsd_err code;
 
-    if (argc >= 2)
-    {
-        code = parse_options(argc, argv);
-        if (code != ERR_OK)
-            return code;
-    }
+    if (argc < 2)
+        my_help(1, NULL, NULL);
+
+    code = parse_options(argc, argv);
+    if (code != ERR_OK)
+        return code;
 
     printf("-------------------\nParsing zone file\n-------------------\n");
     zone_array *zones;
