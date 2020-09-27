@@ -50,6 +50,15 @@ void init_answer(message *m)
 }
 
 
+
+int qname_cmp2(char *qname, char *str2)
+{
+    char *str1 = qname_to_str(qname);
+    int ret = qname_cmp(str1, str2);
+    free(str1);
+    return ret;
+}
+
 /**
  *
  *
@@ -112,7 +121,7 @@ void response_handle(message *m, zone_array *zones)
     for (uint32_t i = 0; i < zones->count; ++i)
     {
         zone *z = &zones->array[i];
-        int16_t cmp_score = qname_cmp(name, z->name);
+        int16_t cmp_score = qname_cmp2(name, z->name);
 
         if (cmp_score == NAME_EQUAL && z->type == type)
         {
