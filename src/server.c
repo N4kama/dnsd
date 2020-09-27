@@ -62,7 +62,7 @@ dnsd_err handle_communication(zone_array *p_zones, dns_sock clientSock)
 
 /**
  * Binds the server address to the socket in IPv4 or IPv6
- * 
+ *
  * @param serverSockfd: server socket file descriptor
  * @param sin_family: AF_INET or AF_INET6
  * @param type: SOCK_STREAM or SOCK_DGRAM
@@ -113,7 +113,7 @@ dnsd_err bind_socket(int serverSockfd, int sin_family, int type)
 
 /**
  * Accepts new sockets in IPv4 or IPv6 (TCP only)
- * 
+ *
  * @param serverSockfd: server socket file descriptor
  * @param clientSockfd: client socket file descriptor
  * @param sin_family: AF_INET or AF_INET6
@@ -127,7 +127,7 @@ dnsd_err accept_socket(int serverSockfd, int *clientSockfd, int sin_family)
     {
         struct sockaddr_in clientaddr4;  /* client addr */
 
-        if ((*clientSockfd = 
+        if ((*clientSockfd =
         accept(serverSockfd, &clientaddr4, &clientaddrlen)) < 0)
         {
             close(serverSockfd);
@@ -138,7 +138,7 @@ dnsd_err accept_socket(int serverSockfd, int *clientSockfd, int sin_family)
     {
         struct sockaddr_in6 clientaddr6;  /* client addr */
 
-        if ((*clientSockfd = 
+        if ((*clientSockfd =
         accept(serverSockfd, &clientaddr6, &clientaddrlen)) < 0)
         {
             close(serverSockfd);
@@ -152,13 +152,13 @@ dnsd_err accept_socket(int serverSockfd, int *clientSockfd, int sin_family)
 /**
  * Create sockets for the server : Can be used to create
  * TCP/UDP sockets on IPv4/Ipv6
- * 
+ *
  * On UDP : same socket for every client
  * On TCP : create_socket forks and returns a new socket each time
- * 
+ *
  * @param clientSockfd: pointer to the client socket created in this function
  * @param sin_family: AF_INET or AF_INET6
- * @param type: SOCK_STREAM or SOCK_DGRAM 
+ * @param type: SOCK_STREAM or SOCK_DGRAM
  * @return: the dnsd_err code
 */
 dnsd_err create_socket(dns_sock *clientSock, int sin_family, int type)
@@ -179,12 +179,12 @@ dnsd_err create_socket(dns_sock *clientSock, int sin_family, int type)
 	/**
      * setsockopt: Prevents "ERROR on binding: address already in use" error
      * while reruning the server immediatly after killing it
-	 * otherwise we have to wait about few seconds. 
+	 * otherwise we have to wait about few seconds.
 	 */
     optval = 1;
     setsockopt(serverSockfd, SOL_SOCKET, SO_REUSEADDR,
         (const void *)&optval, sizeof(int));
-    
+
     if ((errcode = bind_socket(serverSockfd, sin_family, type)) != ERR_OK)
         return errcode;
 
@@ -198,11 +198,11 @@ dnsd_err create_socket(dns_sock *clientSock, int sin_family, int type)
             close(serverSockfd);
             return ERR_SOCK_LISTEN;
         }
-        
+
         /* Accepting new connection, fork & return every new client socket */
         while (!g_sigint)
         {
-            if ((errcode = 
+            if ((errcode =
             accept_socket(serverSockfd, &(clientSock->socketfd), sin_family)) != ERR_OK)
                 return errcode;
 
@@ -263,7 +263,7 @@ dnsd_err handler_tcp_udp(zone_array *p_zones, dns_sock clientSock)
 
 /**
  * Start the DNSserver
- * 
+ *
  * @param p_zones the parsed zone file
  */
 dnsd_err start_server(zone_array *p_zones)
@@ -284,12 +284,12 @@ dnsd_err start_server(zone_array *p_zones)
                     return ERR_FORK;
                 case 0:
                     /* Child process UDP    - IPv4 */
-                    errcode = 
+                    errcode =
                     create_socket(&clientSock, AF_INET, SOCK_DGRAM);
                     break;
                 default:
                     /* Parent process UDP   - IPv6 */
-                    errcode = 
+                    errcode =
                     create_socket(&clientSock, AF_INET6, SOCK_DGRAM);
                     break;
             }
