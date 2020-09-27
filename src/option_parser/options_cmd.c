@@ -13,7 +13,7 @@ dnsd_err my_version(int argc, char **argv, int *i)
 {
     if ((argc != 0 || argv[*i] != NULL))
         printf("Version %.1f\n", VERSION);
-    exit(0); //TODO : change
+    exit(0);
 }
 
 dnsd_err my_help(int argc, char **argv, int *i)
@@ -32,8 +32,11 @@ dnsd_err my_help(int argc, char **argv, int *i)
         printf("\t-pudp <port>\n");
         printf("\t-ptcp <port>\n");
         printf("\t-f <zone_file>\n");
+
+        if (argc > 1 && strcmp(argv[*i], "--help") == 0)
+            exit(0);
     }
-    exit(0); //TODO : change
+    return ERR_OK;
 }
 
 void my_help_error(void)
