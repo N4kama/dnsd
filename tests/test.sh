@@ -2,6 +2,6 @@
 
 echo "Begin DNSD Testsuite"
 
-echo "FIXME"
+[ -x "./unit" ] && ./unit
 
 echo "End DNSD Testsuite"
