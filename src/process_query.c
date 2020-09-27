@@ -101,10 +101,19 @@ int count_dom(char *str)
 {
     if (str[0] == 0)
         return 0;
-    int count = 0;
-    for (;*str; str++)
-        if (*str == '.')
+
+    int count = 1;
+    int cur = 0;
+    while (str[cur] == '.')
+        cur++;
+
+    while(str[cur] != 0)
+    {
+        if (str[cur] == '.')
             count++;
+        cur++;
+    }
+
     if (*(str - 1) == '.')
         count--;
 
