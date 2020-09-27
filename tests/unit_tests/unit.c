@@ -18,6 +18,7 @@ void test_parse_and_write(void);
 void test_qname_cmp(void);
 void test_qname_cmp2(void);
 void test_soa_parser(void);
+void test_qname_to_string(void);
 
 int main(int argc, char *argv[])
 {
@@ -26,6 +27,7 @@ int main(int argc, char *argv[])
 
     printf("\n\n================ DNSD UNIT TESTS START ================\n\n");
 
+    test_qname_to_string();
     test_strings_and_qnames();
 
     //test_display_header();
@@ -382,4 +384,38 @@ void test_soa_parser(void)
 
     free(rdata_base);
     printf("\n-------- END test_soa_parser\n\n");
+}
+
+void test_qname_to_string(void)
+{
+    printf("-------- BEGIN test_qname_to_string\n\n");
+    //www.example.com
+    char qname[17];
+    qname[0] = 3;
+    qname[1] = 'w';
+    qname[2] = 'w';
+    qname[3] = 'w';
+    qname[4] = 7;
+    qname[5] = 'e';
+    qname[6] = 'x';
+    qname[7] = 'a';
+    qname[8] = 'm';
+    qname[9] = 'p';
+    qname[10] = 'l';
+    qname[11] = 'e';
+    qname[12] = 3;
+    qname[13] = 'c';
+    qname[14] = 'o';
+    qname[15] = 'm';
+    qname[16] = '\0';
+
+    char *str = qname_to_string(qname);
+
+    if (!strncmp("www.example.com", str, 16))
+        puts("\tqname_to_string OK");
+    else
+        puts("\tqname_to_string FAIL");
+
+    free(str);
+    printf("\n-------- END test_qname_to_string\n\n");
 }
