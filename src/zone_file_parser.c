@@ -179,6 +179,7 @@ dnsd_err zone_parse(char *filename, zone_array **zones)
         return ERR_NOMEM;
     }
 
+    uint32_t soa_count = 0;
     char *cursor = file_content;
     for (uint32_t i = 0; i < line_count; i++)
     {
@@ -226,6 +227,20 @@ dnsd_err zone_parse(char *filename, zone_array **zones)
             fclose(file);
             return ERR_PARSE_BADVAL;
         }
+        else if ((*zones)->array[i].type == TYPE_SOA)
+        {
+            if (soa_count != 0)
+            {
+                zone_free(*zones);
+                free(file_content);
+                fclose(file);
+                return ERR_PARSE_TOOSOA;
+            }
+            else
+            {
+                soa_count++;
+            }
+        }
         cursor = value_end + 1;
 
         // parse TTL
@@ -260,6 +275,11 @@ dnsd_err zone_parse(char *filename, zone_array **zones)
 
     free(file_content);
     fclose(file);
+
+    if (soa_count == 0)
+    {
+        return ERR_PARSE_NOSOA;
+    }
 
     return ERR_OK;
 }

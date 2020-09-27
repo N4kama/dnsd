@@ -13,7 +13,9 @@ typedef enum {
 
     ERR_PARSE_BADCNT,   // Bad value count
     ERR_PARSE_BADVAL,   // Bad value format
-    ERR_PARSE_BADOPT,   // Bad options for cmd
+    ERR_PARSE_NOSOA,    // No SOA in zone file
+    ERR_PARSE_TOOSOA,   // Too many SOA in zone file
+    ERR_PARSE_BADOPT,   // Bad command line options
 
     ERR_SOCK_OPEN,      // Opening socket failed
     ERR_SOCK_BIND,      // Binding socket failed
