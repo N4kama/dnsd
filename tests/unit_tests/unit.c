@@ -34,14 +34,37 @@ void test_display_header(void)
 
 void test_parse_header(void)
 {
-    FILE *packet = fopen("samples/dnsquery.raw", "r");
+    puts("\n--- BEGIN test_parse_header---\n");
+    puts(" -> Query packet");
     char buf[32];
+    FILE *packet = fopen("samples/dnsquery.raw", "r");
     fread(buf,sizeof(char), 32, packet);
     fclose(packet);
     message *m = malloc(sizeof(message));
     parse_message(buf, m);
-    display_header(&(m->header));
-    display_question(m->question);
+    display_message(m);
+    free_message_ptr(m);
+    puts("");
+
+    puts(" -> Response packet");
+    packet = fopen("samples/dnsanswer.raw", "r");
+    char buf2[125];
+    fread(buf2, sizeof(char), 125, packet);
+    fclose(packet);
+    m = malloc(sizeof(message));
+    parse_message(buf2, m);
+    display_message(m);
+    free_message_ptr(m);
+    puts("");
+
+    puts(" -> SOA responose");
+    char buf3[322];
+    packet = fopen("samples/killme.raw", "r");
+    fread(buf3, sizeof(char), 322, packet);
+    fclose(packet);
+    m = malloc(sizeof(message));
+    parse_message(buf3, m);
+    display_message(m);
     free_message_ptr(m);
 }
 
@@ -73,6 +96,7 @@ void test_parse_and_write(void)
     }
     free_message_ptr(m);
     free(result);
+
     puts(" -> Response packet");
     packet = fopen("samples/dnsanswer.raw", "r");
     char buf2[125];
@@ -101,7 +125,6 @@ void test_parse_and_write(void)
     free(result);
 
     puts(" -> SOA responose");
-
     char buf3[322];
     packet = fopen("samples/killme.raw", "r");
     fread(buf3, sizeof(char), 322, packet);
