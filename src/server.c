@@ -14,6 +14,54 @@
 
 #include "server.h"
 
+dnsd_err handle_communication(zone_array *p_zones, int clientSockfd, int type)
+{
+    (void)p_zones;
+    struct sockaddr_in6 client;
+    socklen_t len = sizeof(client);
+    char request[512];       /* input buffer */
+    char *response;          /* request buffer after parsing */
+    uint64_t response_size;  /* request buffer length after parsing */
+
+    if (type == SOCK_DGRAM)
+    {
+        if (recvfrom(clientSockfd, request, sizeof(request), 0, &client, &len) < 0)
+        {
+            return ERR_SOCK_RECV;
+        }
+    }
+    else
+    {
+        if (recv(clientSockfd, request, sizeof(request), 0) < 0)
+        {
+            close(clientSockfd);
+            return ERR_SOCK_RECV;
+        }
+    }
+
+    response = process_request(request, &response_size, p_zones);
+
+    if (type == SOCK_DGRAM)
+    {
+        if (sendto(clientSockfd, response, sizeof(response), 0, &client, len) < 0)
+        {
+            return ERR_SOCK_RECV;
+        }
+    }
+    else
+    {
+        if (send(clientSockfd, response, sizeof(response), 0) < 0)
+        {
+            close(clientSockfd);
+            return ERR_SOCK_RECV;
+        }
+    }
+
+    free(response);
+
+    return ERR_OK;
+}
+
 /**
  * Binds the server address to the socket in IPv4 or IPv6
  * 
@@ -40,7 +88,6 @@ dnsd_err bind_socket(int serverSockfd, int sin_family, int type)
         /* Binding socket to serverAddress */
         if (bind(serverSockfd, &serveraddr, sizeof(serveraddr)) < 0)
         {
-            fprintf(stderr, "[ERROR] binding in IPv4: %s\n", strerror(errno));
             close(serverSockfd);
             return ERR_SOCK_BIND;
         }
@@ -59,7 +106,6 @@ dnsd_err bind_socket(int serverSockfd, int sin_family, int type)
         /* Binding socket to serverAddress */
         if (bind(serverSockfd, &serveraddr6, sizeof(serveraddr6)) < 0)
         {
-            fprintf(stderr, "[ERROR] binding in IPv6: %s\n", strerror(errno));
             close(serverSockfd);
             return ERR_SOCK_BIND;
         }
@@ -101,6 +147,7 @@ dnsd_err accept_socket(int serverSockfd, int *clientSockfd, int sin_family)
             return ERR_SOCK_ACCEPT;
         }
     }
+
     return ERR_OK;
 }
 
@@ -183,39 +230,6 @@ dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
     }
 }
 
-dnsd_err handle_communication(zone_array *p_zones, int clientSockfd)
-{
-    (void) p_zones;
-
-    int n;                      /* input byte size */
-    char buf[1024];             /* input buffer */
-    //char *req_buf;              /* request buffer after parsing */
-    //uint64_t req_buf_size;      /* request buffer length after parsing */
-
-    /* receiving data from from a client */
-    n = recv(clientSockfd, buf, sizeof(buf)-1, 0);
-    if (n < 0)
-    {
-        close(clientSockfd);
-        return ERR_SOCK_RECV;
-    }
-    /* DEBUG PRINT (Comment Call req and Call res if needed) */
-    buf[n] = 0;
-    printf(buf);
-    /* DEBUG END*/
-
-    /* Calling request handler */
-    // req_buf = process_request(buf, &req_buf_size, p_zones);
-    // printf(req_buf); //DEBUG
-    // free(req_buf);
-
-    /* Calling response handler */
-    //FIXME: call function handler
-    //FIXME: don't forget to send eof (?) to close socket on client side
-    
-    return ERR_OK;
-}
-
 /**
  * Receive requests from client and respond
  * @param clientSockfd Client's socket to manage
@@ -233,26 +247,26 @@ dnsd_err handler_tcp_udp(zone_array *p_zones, int clientSockfd)
         SOL_SOCKET, SO_TYPE, &so_type, &so_type_len) < 0)
     {
         close(clientSockfd);
-        return ERR_PARSE_BADVAL;
+        return ERR_SOCK_RECV;
     }
 
     /* request & response */
     if (so_type == SOCK_DGRAM)
     {
-         while (1)
+        while (1)
         {
-            code = handle_communication(p_zones, clientSockfd);
+            code = handle_communication(p_zones, clientSockfd, so_type);
         }
     }
     else
     {
-        code = handle_communication(p_zones, clientSockfd);
+        code = handle_communication(p_zones, clientSockfd, so_type);
     }
 
-    (void) code; //DELETEME
 
     close(clientSockfd);
-    return ERR_OK;
+
+    return code;
 }
 
 /**
