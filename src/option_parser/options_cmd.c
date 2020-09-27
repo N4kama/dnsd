@@ -92,7 +92,7 @@ dnsd_err my_pudp(int argc, char **argv, int *i)
         {
             for (size_t k = 0; k < strlen(argv[*i]); k++)
             {
-                if (isdigit(argv[*i][k]) != 1)
+                if (isdigit(argv[*i][k]) == 0)
                 {
                     fprintf(stderr, "dnsd: -ptcp: Invalid UDP port : %s\n", argv[*i]);
                     return ERR_PARSE_BADOPT;
@@ -124,7 +124,7 @@ dnsd_err my_ptcp(int argc, char **argv, int *i)
         {
             for (size_t k = 0; k < strlen(argv[*i]); k++)
             {
-                if (isdigit(argv[*i][k]) != 1)
+                if (isdigit(argv[*i][k]) == 0)
                 {
                     fprintf(stderr, "dnsd: -ptcp: Invalid TCP port : %s\n", argv[*i]);
                     return ERR_PARSE_BADOPT;
