@@ -13,6 +13,7 @@ void test_display_header(void);
 void test_parse_header(void);
 void test_parse_and_write(void);
 
+void test_qname_cmp(void);
 void test_qname_cmp2(void);
 void test_soa_parser(void);
 
@@ -27,6 +28,7 @@ int main(int argc, char *argv[])
     test_parse_header();
     test_parse_and_write();
 
+    test_qname_cmp();
     test_qname_cmp2();
     test_soa_parser();
 
@@ -153,6 +155,64 @@ void test_parse_and_write(void)
     free(result);
 
     printf("\n-------- END test_parse_and_write\n\n");
+}
+
+void test_qname_cmp(void)
+{
+    printf("-------- BEGIN test_qname_cmp\n\n");
+
+    char *str1;
+    char *str2 = "example.com";
+
+    printf("\t>>Case matches exactly... ");
+    str1 = "example.com";
+    if (qname_cmp(str1, str2) == NAME_EQUAL)
+        printf("OK\n");
+    else
+    {
+        printf("FAIL\n");
+        printf("\t\tstr1: %s\n", str1);
+        printf("\t\tstr2: %s\n", str2);
+        printf("\t\tqname_cmp = %d\n", qname_cmp(str1, str2));
+    }
+
+    printf("\t>>Case matching 2... ");
+    str1 = "nx.example.com";
+    if (qname_cmp(str1, str2) == 2)
+         printf("OK\n");
+    else
+    {
+        printf("FAIL\n");
+        printf("\t\tstr1: %s\n", str1);
+        printf("\t\tstr2: %s\n", str2);
+        printf("\t\tqname_cmp = %d\n", qname_cmp(str1, str2));
+    }
+
+    printf("\t>>Case matching 1... ");
+    str1 = "not-example.com";
+    if (qname_cmp(str1, str2) == 1)
+          printf("OK\n");
+    else
+    {
+        printf("FAIL\n");
+        printf("\t\tstr1: %s\n", str1);
+        printf("\t\tstr2: %s\n", str2);
+        printf("\t\tqname_cmp = %d\n", qname_cmp(str1, str2));
+    }
+
+    printf("\t>>Case no match... ");
+    str1 = "not-examplecom";
+    if (qname_cmp(str1, str2) == 0)
+          printf("OK\n");
+    else
+    {
+        printf("FAIL\n");
+        printf("\t\tstr1: %s\n", str1);
+        printf("\t\tstr2: %s\n", str2);
+        printf("\t\tqname_cmp = %d\n", qname_cmp(str1, str2));
+    }
+
+    printf("\n-------- END test_qname_cmp\n\n");
 }
 
 void test_qname_cmp2(void)
