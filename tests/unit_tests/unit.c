@@ -63,6 +63,38 @@ void test_strings_and_qnames(void)
     free(qname);
     free(tostr);
 
+    printf("\t>>Case nx.example.com... ");
+    mystr = "nx.example.com";
+    qname = string_to_qname(mystr);
+    tostr = qname_to_string(qname);
+    if (strcmp(mystr, tostr) == 0)
+        printf("OK\n");
+    else
+    {
+        printf("FAIL\n");
+        printf("\t\tmystr: %s\n", mystr);
+        printf("\t\tqname: %s\n", qname);
+        printf("\t\ttostr: %s\n", tostr);
+    }
+    free(qname);
+    free(tostr);
+
+    printf("\t>>Case not-examplecom... ");
+    mystr = "not-examplecom";
+    qname = string_to_qname(mystr);
+    tostr = qname_to_string(qname);
+    if (strcmp(mystr, tostr) == 0)
+        printf("OK\n");
+    else
+    {
+        printf("FAIL\n");
+        printf("\t\tmystr: %s\n", mystr);
+        printf("\t\tqname: %s\n", qname);
+        printf("\t\ttostr: %s\n", tostr);
+    }
+    free(qname);
+    free(tostr);
+
     printf("\n-------- END test_strings_and_qnames\n\n");
 }
 
