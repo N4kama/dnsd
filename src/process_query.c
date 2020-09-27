@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <arpa/inet.h>
 
 #include "common.h"
 #include "process_query.h"
@@ -192,7 +193,7 @@ char *a_parse(zone *a, uint16_t *rsize)
 {
     *rsize = sizeof(uint32_t);
     char *rdata = malloc(*rsize);
-    inet_pton(AF_INET, z->content, rdata);
+    inet_pton(AF_INET, a->content, rdata);
 
     return rdata;
 }
@@ -200,11 +201,11 @@ char *a_parse(zone *a, uint16_t *rsize)
 /**
  * Parse AAAA RDATA
  */
-char *aaaa_parse(zone *a, uint16_t *rsize)
+char *aaaa_parse(zone *aaaa, uint16_t *rsize)
 {
     *rsize = 16 * sizeof(uint8_t);
     char *rdata = malloc(*rsize);
-    inet_pton(AF_INET6, z->content, rdata);
+    inet_pton(AF_INET6, aaaa->content, rdata);
 
     return rdata;
 }
