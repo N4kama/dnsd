@@ -154,7 +154,7 @@ void response_handle(message *m, zone_array *zones)
             best = z;
         }
 
-        if (type == TYPE_SOA) // There MUST be one
+        if (z->type == TYPE_SOA) // There MUST be one
             soa = z;
     }
 

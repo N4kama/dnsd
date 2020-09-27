@@ -19,7 +19,6 @@ $(BIN): src/main.o $(OBJ)
 
 unit: tests/unit_tests/unit.o $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
-	./unit
 
 test: $(BIN)
 	./tests/test.sh $(BIN)
