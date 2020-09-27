@@ -14,7 +14,7 @@
 
 #include "server.h"
 
-dnsd_err handle_communication(zone_array *p_zones, int clientSockfd, int type)
+dnsd_err handle_communication(zone_array *p_zones, dns_sock clientSock)
 {
     (void)p_zones;
     struct sockaddr_in6 client;
@@ -23,36 +23,34 @@ dnsd_err handle_communication(zone_array *p_zones, int clientSockfd, int type)
     char *response;          /* request buffer after parsing */
     uint64_t response_size;  /* request buffer length after parsing */
 
-    if (type == SOCK_DGRAM)
+    if (clientSock.sin_family == AF_INET6)
     {
-        if (recvfrom(clientSockfd, request, sizeof(request), 0, &client, &len) < 0)
+        if (recvfrom(clientSock.socketfd, request, sizeof(request), 0, &client, &len) < 0)
         {
             return ERR_SOCK_RECV;
         }
     }
     else
     {
-        if (recv(clientSockfd, request, sizeof(request), 0) < 0)
+        if (recv(clientSock.socketfd, request, sizeof(request), 0) < 0)
         {
-            close(clientSockfd);
             return ERR_SOCK_RECV;
         }
     }
 
     response = process_request(request, &response_size, p_zones);
 
-    if (type == SOCK_DGRAM)
+    if (clientSock.sin_family == AF_INET6)
     {
-        if (sendto(clientSockfd, response, sizeof(response), 0, &client, len) < 0)
+        if (sendto(clientSock.socketfd, response, sizeof(response), 0, &client, len) < 0)
         {
             return ERR_SOCK_RECV;
         }
     }
     else
     {
-        if (send(clientSockfd, response, sizeof(response), 0) < 0)
+        if (send(clientSock.socketfd, response, sizeof(response), 0) < 0)
         {
-            close(clientSockfd);
             return ERR_SOCK_RECV;
         }
     }
@@ -163,7 +161,7 @@ dnsd_err accept_socket(int serverSockfd, int *clientSockfd, int sin_family)
  * @param type: SOCK_STREAM or SOCK_DGRAM 
  * @return: the dnsd_err code
 */
-dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
+dnsd_err create_socket(dns_sock *clientSock, int sin_family, int type)
 {
     int errcode;                    /* error code */
     int serverSockfd;               /* server socket */
@@ -173,6 +171,10 @@ dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
     serverSockfd = socket(sin_family, type, 0);
 	if (serverSockfd < 0)
 		return ERR_SOCK_OPEN;
+
+    clientSock->socketfd    = serverSockfd;
+    clientSock->sin_family  = sin_family;
+    clientSock->type        = type;
 
 	/**
      * setsockopt: Prevents "ERROR on binding: address already in use" error
@@ -201,13 +203,13 @@ dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
         while (!g_sigint)
         {
             if ((errcode = 
-            accept_socket(serverSockfd, clientSockfd, sin_family)) != ERR_OK)
+            accept_socket(serverSockfd, &(clientSock->socketfd), sin_family)) != ERR_OK)
                 return errcode;
 
             switch (fork())
             {
                 case -1:
-                    close(*clientSockfd);
+                    close(clientSock->socketfd);
                     close(serverSockfd);
                     return ERR_FORK;
                 case 0:
@@ -218,14 +220,14 @@ dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
                     continue;
             }
         }
-        close(*clientSockfd);
+        close(clientSock->socketfd);
         close(serverSockfd);
         return ERR_FORCED_SHUTDOWN;
     }
     else
     {
         /* On UDP mode, simply return server socket */
-        *clientSockfd = serverSockfd;
+        clientSock->socketfd = serverSockfd;
         return ERR_OK;
     }
 }
@@ -236,35 +238,25 @@ dnsd_err create_socket(int *clientSockfd, int sin_family, int type)
  * @param is_stream Is the given socket a TCP socket ?
  * @return: the dnsd_err code
  */
-dnsd_err handler_tcp_udp(zone_array *p_zones, int clientSockfd)
+dnsd_err handler_tcp_udp(zone_array *p_zones, dns_sock clientSock)
 {
     dnsd_err code;                      /* error code */
-    int so_type;                        /* socket type */
-    socklen_t so_type_len;              /* socket type length */
-
-    /* Getting socket type : SOCK_STREAM | SOCK_DGRAM */
-    if (getsockopt(clientSockfd,
-        SOL_SOCKET, SO_TYPE, &so_type, &so_type_len) < 0)
-    {
-        close(clientSockfd);
-        return ERR_SOCK_RECV;
-    }
 
     /* request & response */
-    if (so_type == SOCK_DGRAM)
+    if (clientSock.type == SOCK_DGRAM)
     {
         while (1)
         {
-            code = handle_communication(p_zones, clientSockfd, so_type);
+            code = handle_communication(p_zones, clientSock);
         }
     }
     else
     {
-        code = handle_communication(p_zones, clientSockfd, so_type);
+        code = handle_communication(p_zones, clientSock);
     }
 
 
-    close(clientSockfd);
+    close(clientSock.socketfd);
 
     return code;
 }
@@ -277,7 +269,7 @@ dnsd_err handler_tcp_udp(zone_array *p_zones, int clientSockfd)
 dnsd_err start_server(zone_array *p_zones)
 {
     dnsd_err errcode;           /* error code from create_socket */
-    int clientSockfd;           /* client socket returned by server */
+    dns_sock clientSock;           /* client socket returned by server */
 
     /* Creating socket for TCP/UDP connections on IPv4/IPv6 */
     switch (fork())
@@ -293,12 +285,12 @@ dnsd_err start_server(zone_array *p_zones)
                 case 0:
                     /* Child process UDP    - IPv4 */
                     errcode = 
-                    create_socket(&clientSockfd, AF_INET, SOCK_DGRAM);
+                    create_socket(&clientSock, AF_INET, SOCK_DGRAM);
                     break;
                 default:
                     /* Parent process UDP   - IPv6 */
                     errcode = 
-                    create_socket(&clientSockfd, AF_INET6, SOCK_DGRAM);
+                    create_socket(&clientSock, AF_INET6, SOCK_DGRAM);
                     break;
             }
             break;
@@ -311,12 +303,12 @@ dnsd_err start_server(zone_array *p_zones)
                 case 0:
                     /* Child process TCP    - IPv4 */
                     errcode =
-                    create_socket(&clientSockfd, AF_INET, SOCK_STREAM);
+                    create_socket(&clientSock, AF_INET, SOCK_STREAM);
                     break;
                 default:
                     /* Parent process TCP   - IPv6 */
                     errcode =
-                    create_socket(&clientSockfd, AF_INET6, SOCK_STREAM);
+                    create_socket(&clientSock, AF_INET6, SOCK_STREAM);
                     break;
             }
             break;
@@ -326,7 +318,7 @@ dnsd_err start_server(zone_array *p_zones)
     if (errcode == ERR_OK)
     {
         /* Q/A with client */
-        handler_tcp_udp(p_zones, clientSockfd);
+        handler_tcp_udp(p_zones, clientSock);
         return ERR_OK;
     }
     return errcode;
