@@ -79,6 +79,7 @@ void display_message(message *m)
 // Parse a dns message (query or answer)
 int parse_message(char *buffer, message *msg)
 {
+    size_t nlen;
     question *q = NULL;
     resource_record *an = NULL;
     resource_record *ns = NULL;
@@ -103,11 +104,12 @@ int parse_message(char *buffer, message *msg)
     // Clean this up
     for (int i = 0; i < msg->header.qdcount; i++)
     {
-        q[i].qname = calloc(strlen(content), sizeof(char));
+        nlen = name_length(content);
+        q[i].qname = calloc(nlen, sizeof(char));
         if (q[i].qname == NULL)
             return ERR_NOMEM;
-        strncpy(q[i].qname, content, strlen(content) + 1);
-        content += strlen(content) + 1;
+        memcpy(q[i].qname, content, nlen);
+        content += nlen;
         q[i].qtype = ntohs(*(uint16_t *)content);
         content += sizeof(uint16_t);
         q[i].qclass = ntohs(*(uint16_t *)content);
@@ -154,21 +156,12 @@ resource_record parse_rr(char **buffer)
     resource_record rr;
     char *name = NULL;
     char *data = NULL;
+    size_t nlen;
 
-    //Compression
-    if ((uint8_t)**buffer >= 192)
-    {
-        name = calloc(2, sizeof(char));
-        memcpy(name, *buffer, 2);
-        *buffer += 2;
-    }
-    else
-    {
-        name = calloc(strlen(*buffer), sizeof(char));
-        strncpy(name, *buffer, strlen(*buffer) + 1);
-        *buffer += strlen(*buffer) + 1;
-    }
+    nlen = read_name(*buffer, &name);
     rr.name = name;
+
+    *buffer += nlen;
 
     rr.type = ntohs(*(uint16_t*)*buffer);
     *buffer += sizeof(uint16_t);
@@ -231,6 +224,53 @@ char *qname_to_string(char *qname)
     return name;
 }
 
+size_t name_length(char *name)
+{
+    size_t len = 0;
+    size_t i;
+    for (i = 0; name[i] != 0; i++)
+    {
+        if ((uint8_t)name[i] >= 0xc0)
+        {
+            len += 2;
+            return len;
+        }
+        else
+        {
+            len++;
+        }
+    }
+    len++;
+    return len;
+}
+
+/**
+ * In order to handle label compression, this function handles iterating
+ * over a name and handling it properly
+ * @param buffer: the raw data, pointing to the beginning of the name
+ * @param name: pointer to a char* to get the value back
+ * @return the size of the name
+ */
+size_t read_name(char *buffer, char **name)
+{
+    size_t len = name_length(buffer);
+    *name = calloc(len, sizeof(char));
+    if (*name == NULL)
+        return 0;
+
+    memcpy(*name, buffer, len);
+
+    return len;
+}
+
+size_t write_name(char *name, char *buffer)
+{
+    size_t len = name_length(name);
+
+    memcpy(buffer, name, len);
+
+    return len;
+}
 
 /**
  * Free multiple resource records rr
@@ -279,18 +319,12 @@ void free_message_ptr(message *m)
 
 int copy_rr(char **out, resource_record rr)
 {
-    if ((uint8_t)rr.name[0] >= 192)
-    {
-        **out = rr.name[0];
-        *out += 1;
-        **out = rr.name[1];
-        *out += 1;
-    }
-    else
-    {
-        memcpy(*out, rr.name, strlen(rr.name) + 1);
-        *out += strlen(rr.name) + 1;
-    }
+    size_t nlen;
+    nlen = write_name(rr.name, *out);
+    if (nlen == 0)
+        return ERR_PARSE_BADVAL;
+
+    *out += nlen;
     *(uint16_t*)*out = htons(rr.type);
     *out += sizeof(uint16_t);
     *(uint16_t*)*out = htons(rr.clss);
@@ -308,14 +342,7 @@ int copy_rr(char **out, resource_record rr)
 uint64_t rr_length(resource_record rr)
 {
     uint64_t rr_len = (3 * sizeof(uint16_t)) + sizeof(uint32_t) + rr.rdlength;
-    if ((uint8_t)rr.name[0] >= 192)
-    {
-        rr_len += 2;
-    }
-    else
-    {
-        rr_len += strlen(rr.name);
-    }
+    rr_len += name_length(rr.name);
     return rr_len;
 }
 
@@ -331,7 +358,7 @@ uint64_t message_length(message m)
     uint64_t len = sizeof(header);
 
     for (i = 0; i < m.header.qdcount; i++)
-        len += (2 * sizeof(uint16_t)) + strlen(m.question[i].qname) + 1;
+        len += (2 * sizeof(uint16_t)) + name_length(m.question[i].qname);
 
     for (i = 0; i < m.header.ancount; i++)
         len += rr_length(m.answer[i]);
@@ -352,6 +379,7 @@ uint64_t message_length(message m)
 uint64_t message_to_raw(message m, char **out)
 {
     size_t i;
+    size_t nlen;
     size_t len = message_length(m);
     uint16_t qdc = m.header.qdcount;
     uint16_t anc = m.header.ancount;
@@ -373,8 +401,9 @@ uint64_t message_to_raw(message m, char **out)
 
     for (i = 0; i < qdc; i++)
     {
-        memcpy(*out, m.question[i].qname, strlen(m.question[i].qname));
-        *out += strlen(m.question[i].qname) + 1;
+        nlen = name_length(m.question[i].qname);
+        memcpy(*out, m.question[i].qname, nlen);
+        *out += nlen;
         *(uint16_t*)*out = htons(m.question[i].qtype);;
         *out += sizeof(uint16_t);
         *(uint16_t*)*out = htons(m.question[i].qclass);

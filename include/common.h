@@ -82,6 +82,9 @@ char *string_to_qname(char *s);
 void display_header(header *h);
 void display_question(question *q);
 void display_message(message *m);
+size_t read_name(char *buffer, char **name);
+size_t write_name(char *name, char *buffer);
+size_t name_length(char *name);
 
 #endif
 
