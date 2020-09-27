@@ -211,8 +211,9 @@ dnsd_err handle_communication(zone_array *p_zones, int clientSockfd)
     // free(req_buf);
 
     /* Calling response handler */
-    //FIXME
-
+    //FIXME: call function handler
+    //FIXME: don't forget to send eof (?) to close socket on client side
+    
     return ERR_OK;
 }
 
