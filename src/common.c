@@ -55,6 +55,10 @@ void display_rr(resource_record *rr)
     printf("data: %s\n", rr->rdata);
 }
 
+/**
+ * Displays a message struct
+ * @param m: the message to display
+ */
 void display_message(message *m)
 {
     size_t i;
@@ -76,7 +80,12 @@ void display_message(message *m)
 
 }
 
-// Parse a dns message (query or answer)
+/**
+ * Parses raw data into a message struct
+ * @param buffer: the buffer containing the raw data
+ * @param msg: an allocates message struct
+ * @return ERR_OK on success, ERR_* on failure
+ */
 int parse_message(char *buffer, message *msg)
 {
     size_t nlen;
@@ -151,6 +160,11 @@ int parse_message(char *buffer, message *msg)
     return ERR_OK;
 }
 
+/**
+ * Parses a resource record
+ * @param **buffer: the buffer containing the rr
+ * @return the parsed resouce record
+ */
 resource_record parse_rr(char **buffer)
 {
     resource_record rr;
@@ -225,6 +239,11 @@ char *qname_to_string(char *qname)
     return name;
 }
 
+/**
+ * Computes the name of a domain name, handling compression cases
+ * @param name: the domain name to compute the lehgth of
+ * @return the computed length
+ */
 size_t name_length(char *name)
 {
     size_t len = 0;
@@ -250,7 +269,7 @@ size_t name_length(char *name)
  * over a name and handling it properly
  * @param buffer: the raw data, pointing to the beginning of the name
  * @param name: pointer to a char* to get the value back
- * @return the size of the name
+ * @return the length of the name
  */
 size_t read_name(char *buffer, char **name)
 {
@@ -264,6 +283,12 @@ size_t read_name(char *buffer, char **name)
     return len;
 }
 
+/**
+ * Writes a domain name to a buffer, handling name compression
+ * @param name: the name to write
+ * @param buffer: the buffer to write to
+ * @return the length of the name
+ */
 size_t write_name(char *name, char *buffer)
 {
     size_t len = name_length(name);
@@ -340,6 +365,11 @@ int copy_rr(char **out, resource_record rr)
     return 0;
 }
 
+/**
+ * Computes the actual length of a resource_record
+ * @param rr: the resource record to compute the length of
+ * @return the computed length
+ */
 uint64_t rr_length(resource_record rr)
 {
     uint64_t rr_len = (3 * sizeof(uint16_t)) + sizeof(uint32_t) + rr.rdlength;
