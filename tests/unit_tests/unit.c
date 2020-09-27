@@ -13,7 +13,7 @@ void test_display_header(void);
 void test_parse_header(void);
 void test_parse_and_write(void);
 
-void test_qname_cmp(void);
+void test_qname_cmp2(void);
 void test_soa_parser(void);
 
 int main(int argc, char *argv[])
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     test_parse_header();
     test_parse_and_write();
 
-    test_qname_cmp();
+    test_qname_cmp2();
     test_soa_parser();
 
     printf("================  DNSD UNIT TEST END   ================\n\n\n");
@@ -158,15 +158,15 @@ void test_parse_and_write(void)
     printf("\n-------- END test_parse_and_write\n\n");
 }
 
-void test_qname_cmp(void)
+void test_qname_cmp2(void)
 {
-    printf("-------- BEGIN test_qname_cmp\n\n");
+    printf("-------- BEGIN test_qname_cmp2\n\n");
 
     char *qname;
     char *str1;
     char *str2 = "example.com";
 
-    printf("\t>>Case equal... ");
+    printf("\t>>Case matches exactly... ");
     qname = string_to_qname("example.com");
     if (qname_cmp2(qname, str2) == NAME_EQUAL)
         printf("OK\n");
@@ -182,7 +182,7 @@ void test_qname_cmp(void)
     }
     free(qname);
 
-    printf("\t>>Case matching == 2... ");
+    printf("\t>>Case matching 2... ");
     qname = string_to_qname("nx.example.com");
     if (qname_cmp2(qname, str2) == 2)
          printf("OK\n");
@@ -198,8 +198,24 @@ void test_qname_cmp(void)
     }
     free(qname);
 
-    printf("\t>>Case no match... ");
+    printf("\t>>Case matching 1... ");
     qname = string_to_qname("not-example.com");
+    if (qname_cmp2(qname, str2) == 1)
+          printf("OK\n");
+    else
+    {
+        str1 = qname_to_string(qname);
+        printf("FAIL\n");
+        printf("\t\tqname: %s\n", qname);
+        printf("\t\tqname_to_string: %s\n", str1);
+        printf("\t\tstr2: %s\n", str2);
+        printf("\t\tqname_cmp = %d\n", qname_cmp2(qname, str2));
+        free(str1);
+    }
+    free(qname);
+
+    printf("\t>>Case no match... ");
+    qname = string_to_qname("not-examplecom");
     if (qname_cmp2(qname, str2) == 0)
           printf("OK\n");
     else
@@ -214,7 +230,7 @@ void test_qname_cmp(void)
     }
     free(qname);
 
-    printf("\n-------- END test_qname_cmp\n\n");
+    printf("\n-------- END test_qname_cmp2\n\n");
 }
 
 void test_soa_parser(void)
