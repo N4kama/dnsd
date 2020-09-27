@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 
     test_process_request();
 
-    printf("================  DNSD UNIT TEST END   ================\n\n\n");
+    printf("\n\n================  DNSD UNIT TEST END   ================\n\n\n");
 }
 
 void test_count_dom(void)
