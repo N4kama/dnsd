@@ -2,6 +2,7 @@
 #define COMMON_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define __packed __attribute__((__packed__))
 
