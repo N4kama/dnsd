@@ -168,7 +168,7 @@ void test_qname_cmp(void)
 
     printf("\t>>Case equal... ");
     qname = string_to_qname("example.com");
-    if (qname_cmp(qname, str2) == -1)
+    if (qname_cmp2(qname, str2) == -1)
         printf("OK\n");
     else
     {
@@ -177,14 +177,14 @@ void test_qname_cmp(void)
         printf("\t\tqname: %s\n", qname);
         printf("\t\tqname_to_string: %s\n", str1);
         printf("\t\tstr2: %s\n", str2);
-        printf("\t\tqname_cmp = %d\n", qname_cmp(qname, str2));
+        printf("\t\tqname_cmp = %d\n", qname_cmp2(qname, str2));
         free(str1);
     }
     free(qname);
 
     printf("\t>>Case matching == 2... ");
     qname = string_to_qname("nx.example.com");
-    if (qname_cmp(qname, str2) == 2)
+    if (qname_cmp2(qname, str2) == 2)
          printf("OK\n");
     else
     {
@@ -193,14 +193,14 @@ void test_qname_cmp(void)
         printf("\t\tqname: %s\n", qname);
         printf("\t\tqname_to_string: %s\n", str1);
         printf("\t\tstr2: %s\n", str2);
-        printf("\t\tqname_cmp = %d\n", qname_cmp(qname, str2));
+        printf("\t\tqname_cmp = %d\n", qname_cmp2(qname, str2));
         free(str1);
     }
     free(qname);
 
     printf("\t>>Case no match... ");
     qname = string_to_qname("not-example.com");
-    if (qname_cmp(qname, str2) == 0)
+    if (qname_cmp2(qname, str2) == 0)
           printf("OK\n");
     else
     {
@@ -209,7 +209,7 @@ void test_qname_cmp(void)
         printf("\t\tqname: %s\n", qname);
         printf("\t\tqname_to_string: %s\n", str1);
         printf("\t\tstr2: %s\n", str2);
-        printf("\t\tqname_cmp = %d\n", qname_cmp(qname, str2));
+        printf("\t\tqname_cmp = %d\n", qname_cmp2(qname, str2));
         free(str1);
     }
     free(qname);
