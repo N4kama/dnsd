@@ -8,7 +8,7 @@
 #include "options.h"
 
 static opt g_opt = {
-    .v4 = { INADDR_LOOPBACK },      // 127.0.0.1
+    .v4 = { .s_addr = 16777343 }, // 127.0.0.1
     .v6 = IN6ADDR_LOOPBACK_INIT,    // ::1
     .p_udp = 53,
     .p_tcp = 53,
