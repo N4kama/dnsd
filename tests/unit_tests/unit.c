@@ -457,6 +457,10 @@ void test_qname_to_string(void)
 
 void test_process_request(void)
 {
+
+    printf("-------- BEGIN test_process_request\n\n");
+
+
     char buf[29];
     uint64_t out_size = 0;
     FILE *pack = fopen("samples/examplequery.raw", "r");
@@ -467,6 +471,10 @@ void test_process_request(void)
 
     char *out = process_request(buf, &out_size, zones);
 
+    message *m = malloc(sizeof(message));
+    parse_message(out, m);
+    puts("");
+    display_message(m);
 
     free(out);
     zone_free(zones);
