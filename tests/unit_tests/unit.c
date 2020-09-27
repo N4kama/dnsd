@@ -476,6 +476,7 @@ void test_process_request(void)
     puts("");
     display_message(m);
 
+    free_message_ptr(m);
     free(out);
     zone_free(zones);
 }
