@@ -8,9 +8,9 @@
  * Takes raw bytes in input and builds and return a raw answer
  * Don't forget to free output_raw!!!
  * @param raw The raw data to process
- * @param out_buf The processed output data
+ * @param out_size The size of output data
  * @param p_zones The zone file to answer the client with
- * @return Size of *out_buf
+ * @return Output buffer
  */
 char *process_request(char* raw, uint64_t *out_size, zone_array *zones)
 {
@@ -18,7 +18,7 @@ char *process_request(char* raw, uint64_t *out_size, zone_array *zones)
     message *input_msg = calloc(1, sizeof(message));
     int ret = parse_message(raw, input_msg);
     if (ret != 0) // An error happened
-        input_msg->header.rcode = 1;
+        input_msg->header.rcode = RCODE_FORM_ERROR;
 
     // TODO: Check if there is at least 1 question
 
@@ -29,8 +29,7 @@ char *process_request(char* raw, uint64_t *out_size, zone_array *zones)
     char* output_raw;
     *out_size = message_to_raw(*input_msg, &output_raw);
 
-    free_message(*input_msg);
-    free(input_msg);
+    free_message_ptr(input_msg);
 
     return output_raw;
 }
@@ -60,7 +59,7 @@ void response_handle(message *m, zone_array *zones)
 {
     init_answer(m);
 
-    if (m->header.rcode != RCODE_NO_ERROR)
+    if (m->header.rcode == RCODE_FORM_ERROR)
         return;
 
     char *name = m->question->qname;
@@ -145,6 +144,7 @@ int qname_cmp(char *qname, char *str2)
 
     return matching;
 }
+
 
 /**
  * Modify *rdata and *rsize depending on type and zone given
