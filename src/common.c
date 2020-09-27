@@ -207,7 +207,7 @@ char *qname_to_string(char *qname)
         qname += qname[0] + 1;
     }
 
-    name = calloc(total_length + nlabels, 1);
+    name = calloc(total_length + nlabels, sizeof(char));
     name_base = name;
     qname = base;
     while (*qname != 0)
@@ -218,7 +218,7 @@ char *qname_to_string(char *qname)
         name += label_length + 1;
         qname += label_length + 1;
     }
-    name[0] = '\0';
+    name[-1] = 0;
     name = name_base;
 
     return name;
@@ -437,6 +437,8 @@ uint64_t message_to_raw(message m, char **out)
  */
 char *string_to_qname(char *s)
 {
+    //example.com
+
     char *qname = NULL;
     size_t i;
     size_t j;
@@ -451,7 +453,7 @@ char *string_to_qname(char *s)
         }
         else
         {
-            qname = realloc(qname, sizeof(char) * label_length + 1);
+            qname = realloc(qname, (total_length + 1) * sizeof(char));
             qname[i - label_length] = label_length;
             for (j = i - label_length; j < i; j++)
                 qname[j + 1] = s[j];
@@ -459,5 +461,10 @@ char *string_to_qname(char *s)
         }
         total_length++;
     }
+    qname = realloc(qname, (total_length + 2) * sizeof(char));
+    qname[i - label_length] = label_length;
+    for (j = i - label_length; j < i; j++)
+        qname[j + 1] = s[j];
+    qname[total_length + 1] = 0;
     return qname;
 }
