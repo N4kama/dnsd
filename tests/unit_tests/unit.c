@@ -9,6 +9,8 @@
 #include "process_query.h"
 #include "server.h"
 
+void test_strings_and_qnames(void);
+
 void test_display_header(void);
 void test_parse_header(void);
 void test_parse_and_write(void);
@@ -24,6 +26,8 @@ int main(int argc, char *argv[])
 
     printf("\n\n================ DNSD UNIT TESTS START ================\n\n");
 
+    test_strings_and_qnames();
+
     //test_display_header();
     test_parse_header();
     test_parse_and_write();
@@ -33,6 +37,33 @@ int main(int argc, char *argv[])
     test_soa_parser();
 
     printf("================  DNSD UNIT TEST END   ================\n\n\n");
+}
+
+void test_strings_and_qnames(void)
+{
+    printf("-------- BEGIN test_strings_and_qnames\n\n");
+
+    char *mystr;
+    char *qname;
+    char *tostr;
+
+    printf("\t>>Case example.com... ");
+    mystr = "example.com";
+    qname = string_to_qname(mystr);
+    tostr = qname_to_string(qname);
+    if (strcmp(mystr, tostr) == 0)
+        printf("OK\n");
+    else
+    {
+        printf("FAIL\n");
+        printf("\t\tmystr: %s\n", mystr);
+        printf("\t\tqname: %s\n", qname);
+        printf("\t\ttostr: %s\n", tostr);
+    }
+    free(qname);
+    free(tostr);
+
+    printf("\n-------- END test_strings_and_qnames\n\n");
 }
 
 void test_display_header(void)
