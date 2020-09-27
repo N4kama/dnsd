@@ -52,11 +52,20 @@ void test_count_dom(void)
     else
         printf(".com is FAIL\n");
 
+    if (count_dom("com") == 1)
+        printf("com is OK\n");
+    else
+        printf("com is FAIL\n");
 
     if (count_dom("exemple.com") == 2)
-        printf("exemple.com is OK\n");
+        printf("exemple.com is ok\n");
     else
-        printf("exemple.com is FAIL\n");
+        printf("exemple.com is fail\n");
+
+    if (count_dom("exemple.com.") == 2)
+        printf("exemple.com. is ok\n");
+    else
+        printf("exemple.com. is fail\n");
 
     if (count_dom("") == 0)
         printf(" is OK\n");

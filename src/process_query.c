@@ -114,7 +114,7 @@ int count_dom(char *str)
         cur++;
     }
 
-    if (*(str - 1) == '.')
+    if (str[cur - 1] == '.')
         count--;
 
     return count;
