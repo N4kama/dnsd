@@ -19,6 +19,7 @@ void test_qname_cmp(void);
 void test_qname_cmp2(void);
 void test_soa_parser(void);
 void test_qname_to_string(void);
+void test_process_request(void);
 
 void test_count_dom(void);
 
@@ -41,6 +42,8 @@ int main(int argc, char *argv[])
     test_soa_parser();
 
     test_count_dom();
+
+    test_process_request();
 
     printf("================  DNSD UNIT TEST END   ================\n\n\n");
 }
@@ -450,4 +453,19 @@ void test_qname_to_string(void)
 
     free(str);
     printf("\n-------- END test_qname_to_string\n\n");
+}
+
+void test_process_request(void)
+{
+    char buf[29];
+    uint64_t out_size = 0;
+    FILE *pack = fopen("samples/examplequery.raw", "r");
+    fread(buf, sizeof(char), 29, pack);
+    fclose(pack);
+    zone_array *zones;
+    zone_parse("samples/dnsd.zone", &zones);
+
+    process_request(buf, &out_size, zones);
+
+    zone_free(zones);
 }
