@@ -49,81 +49,47 @@ void init_answer(message *m)
     m->header.arcount = 0;
 }
 
+
 /**
- * nom présent: if name and type are good, return zone
- * nom présent mais type absent: if name is good but not type, return SOA
- * nom non-existant: check if zone name is substring of name, return SOA
- * empty non terminal: return SOA ?
- * zone inconnue: return NULL
+ * Modify *rdata and *rsize depending on type and zone given
+ * Do not forget to free return pointer
  */
-void response_handle(message *m, zone_array *zones)
+char *rdata_from_type(int type, zone *z, uint16_t *rsize)
 {
-    init_answer(m);
-
-    if (m->header.rcode == RCODE_FORM_ERROR)
-        return;
-
-    char *name = m->question->qname;
-    uint16_t type = m->question->qtype;
-    zone *best_soa = NULL;
-    int16_t soa_score = 0;
-
-    for (uint32_t i = 0; i < zones->count; ++i)
+    char *rdata = NULL;
+    switch(type)
     {
-        zone *z = &zones->array[i];
-        int16_t cmp_score = qname_cmp(name, z->name);
+        case TYPE_A:
+            break;
+        case TYPE_AAAA:
+            break;
+        case TYPE_CNAME:
+            break;
+        case TYPE_MX:
+            break;
+        case TYPE_NS:
+            break;
+        case TYPE_SOA:
+            break;
+        case TYPE_TXT:
+            *rsize = strlen(z->content);
+            rdata = malloc(*rsize);
+            strncpy(rdata, z->content, *rsize);
+            return rdata;
+    };
 
-        if (cmp_score < 0 && type == z->type)
-        {
-            m->header.ancount += 1;
-            m->header.rcode = RCODE_NO_ERROR;
-            m->answer = malloc(sizeof(resource_record));
-            m->answer->name = m->question->qname;
-            m->answer->type = m->question->qtype;
-            m->answer->clss = m->question->qclass;
-            m->answer->ttl = z->ttl;
-            //m->answer->rdata = ; //FIXME
-            //m->answer->rdlength = ; //FIXME
-            return;
-        }
-
-        // check if SOA is better than previous one
-        if (type == TYPE_SOA && cmp_score > soa_score)
-        {
-            best_soa = z;
-            soa_score = cmp_score;
-        }
-    }
-
-    if (best_soa != NULL)
-    {
-        m->header.nscount += 1;
-        m->header.rcode = RCODE_NO_ERROR; // RCODE_NO_ERROR si nom présent mais type absent
-                                          // RCODE_NXDOMAIN si nom non-existant
-        m->authority = malloc(sizeof(resource_record));
-        m->authority->name = m->question->qname;
-        m->authority->type = m->question->qtype;
-        m->authority->clss = m->question->qclass;
-        m->authority->ttl = best_soa->ttl;
-        uint16_t rsize;
-        char *rdata = rdata_from_type(TYPE_SOA, best_soa, &rsize);
-        m->authority->rdata = rdata;
-        m->authority->rdlength = rsize;
-    }
-    
-    // TODO: Check tc:indique si la réponse dépasse la taille maximum d’un
-    // message UDP pour le client,
-    // if (XXX)
-    //  m->header.tc = 1;
+    // Not handled
+    return NULL;
 }
 
 
-/*
- * Retrun nb of matching domains
+/**
+ *
+ *
+ *
  */
-int qname_cmp(char *qname, char *str2)
+int qname_cmp(char *str1, char *str2)
 {
-    char *str1 = qname_to_string(qname);
     uint64_t l1 = strlen(str1) - 1;
     uint64_t l2 = strlen(str2) - 1;
 
@@ -139,12 +105,131 @@ int qname_cmp(char *qname, char *str2)
         l2--;
     }
 
-    free(str1);
     if (l1 == 0 && l2 == 0)
-        return -1;
+        return NAME_EQUAL;
 
     return matching;
 }
+
+int count_dom(char *str)
+{
+    if (str[0] == 0)
+        return 0;
+    int count = 0;
+    for (;*str; str++)
+        if (*str == '.')
+            count++;
+    if (*(str - 1) == '.')
+        count--;
+
+    return count;
+}
+
+
+/**
+ * nom présent: if name and type are good, return zone
+ * nom présent mais type absent: if name is good but not type, return SOA
+ * nom non-existant: check if zone name is substring of name, return SOA
+ * empty non terminal: return SOA ?
+ * zone inconnue: return NULL
+ */
+void response_handle(message *m, zone_array *zones)
+{
+    char *name = m->question->qname;
+    uint16_t type = m->question->qtype;
+    zone *soa = NULL;
+    zone *best = NULL;
+    int best_score = 0;
+    int found = 0;
+
+    for (uint32_t i = 0; i < zones->count; ++i)
+    {
+        zone *z = &zones->array[i];
+        int16_t cmp_score = qname_cmp(name, z->name);
+
+        if (cmp_score == NAME_EQUAL && z->type == type)
+        {
+            found = 1;
+            break;
+        }
+
+        if (cmp_score > best_score)
+        {
+            best_score = cmp_score;
+            best = z;
+        }
+
+        if (type == TYPE_SOA) // There MUST be one
+            soa = z;
+    }
+
+    int soa_len = count_dom(soa->name);
+
+    if (found)
+    {
+        //CASE: Name exists                     example.com
+        build_ans(m, best, RR_ANSWER, RCODE_NO_ERROR);
+    }
+    else if (best_score == NAME_EQUAL)
+    {
+        //CASE: Name exists but type is absent  example.com
+        build_ans(m, soa, RR_AUTHORITY, RCODE_NO_ERROR);
+    }
+    else if (best_score < soa_len)
+    {
+        //CASE: Unknown zone,               not-example.com
+       m->header.rcode = RCODE_REFUSED;
+    }
+    else if (best_score == soa_len)
+    {
+        //CASE: Name does not exist          nx.example.com
+        build_ans(m, soa, RR_AUTHORITY, RCODE_NXDOMAIN);
+    }
+    else if (best_score > soa_len)
+    {
+        //CASE: Empty non-terminal          sub.example.com
+        build_ans(m, soa, RR_AUTHORITY, RCODE_NO_ERROR);
+    }
+
+    // TODO: Check tc:indique si la réponse dépasse la taille maximum d’un
+    // message UDP pour le client,
+    // if (XXX)
+    //  m->header.tc = 1;
+
+    // TODO: Do CHAOS
+}
+
+
+void build_ans(message *m, zone *z, int rr_type, int rcode)
+{
+
+    resource_record *ans = malloc(sizeof(resource_record));
+    ans->name = m->question->qname;
+    ans->type = m->question->qtype;
+    ans->clss = m->question->qclass;
+    ans->ttl = z->ttl;
+
+    uint16_t rsize;
+    char *rdata = rdata_from_type(z->type, z, &rsize);
+    ans->rdata = rdata;
+    ans->rdlength = rsize;
+
+    switch(rr_type)
+    {
+        case RR_ANSWER:
+            m->answer = ans;
+            m->header.ancount += 1;
+            m->header.rcode = rcode;
+            break;
+        case RR_AUTHORITY:
+            m->authority = ans;
+            m->header.nscount += 1;
+            break;
+        case RR_ADDITIONAL:
+            m->additional = ans;
+            m->header.arcount += 1;
+            break;
+    };
 
 /**
  * Parse SOA RDATA
@@ -232,7 +317,5 @@ char *rdata_from_type(int type, zone *z, uint16_t *rsize)
             strncpy(rdata, z->content, *rsize);
             return rdata;
     };
-
-    // Not handled
-    return NULL;
 }
+
