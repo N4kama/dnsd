@@ -2,7 +2,12 @@
 
 #include "zone_file_parser.h"
 
-// strchr() that support escaped searched char
+/**
+ * Find the first occurence of a non-escaped character
+ * @param s Input string
+ * @param c Character to find
+ * @return Pointer to the first occurence
+ */
 static
 char *strechr(char *s, char c)
 {
@@ -12,7 +17,12 @@ char *strechr(char *s, char c)
     return NULL;
 }
 
-// count occurence of char c in s
+/**
+ * Count occurence of char c in s
+ * @param s Input string
+ * @param c Character to count
+ * @return Count
+ */
 static
 uint32_t strcount(char *s, char c)
 {
@@ -23,7 +33,11 @@ uint32_t strcount(char *s, char c)
     return count;
 }
 
-// string to QTYPE
+/**
+ * Convert string to QTYPE
+ * @param Input string (A, AAAA, SOA...)
+ * @return Corresponding QTYPE
+ */
 static
 uint16_t str2type(char *str)
 {
@@ -42,7 +56,11 @@ uint16_t str2type(char *str)
     return 0;
 }
 
-// check if domain is well-formed
+/**
+ * Check if domain is well-formed
+ * @param name Domain name
+ * @return Boolean
+ */
 static
 uint8_t sanitize_name(char *name)
 {
@@ -64,7 +82,11 @@ uint8_t sanitize_name(char *name)
     return 1;
 }
 
-// unescape a char in the given string
+/**
+ * Unescape a char in the given string
+ * @param s Input string
+ * @param c Character to unescape
+ */
 static
 void str_unescape(char *s, char c)
 {
@@ -74,6 +96,45 @@ void str_unescape(char *s, char c)
                 s[i] = s[i + 1];
 }
 
+/**
+ * Free the previously allocated array of zone
+ * @param Allocated zones (from `parse_zone()`)
+ */
+void zone_free(zone_array *zones)
+{
+    for (uint32_t i = 0; i < zones->count; i++)
+    {
+        free(zones->array[i].name);
+        free(zones->array[i].content);
+    }
+
+    free(zones);
+}
+
+/**
+ * Print zones
+ * @param zones Array of zone
+ */
+void zone_print(zone_array *zones)
+{
+    if (zones != NULL)
+    {
+        for (uint32_t i = 0; i < zones->count; i++)
+            printf("%02u: name=%-32s\ttype=%04u\tTTL=%08u\tcontent=%-64s\n",
+                   i,
+                   zones->array[i].name,
+                   zones->array[i].type,
+                   zones->array[i].ttl,
+                   zones->array[i].content);
+    }
+}
+
+/**
+ * Parse the given zone file
+ * @param filename Input zone file path
+ * @param zones Output array of zone pointer
+ * @return dnsd_err Error code
+ */
 dnsd_err zone_parse(char *filename, zone_array **zones)
 {
     FILE *file = fopen(filename, "r");
@@ -201,29 +262,4 @@ dnsd_err zone_parse(char *filename, zone_array **zones)
     fclose(file);
 
     return ERR_OK;
-}
-
-void zone_free(zone_array *zones)
-{
-    for (uint32_t i = 0; i < zones->count; i++)
-    {
-        free(zones->array[i].name);
-        free(zones->array[i].content);
-    }
-
-    free(zones);
-}
-
-void zone_print(zone_array *zones)
-{
-    if (zones != NULL)
-    {
-        for (uint32_t i = 0; i < zones->count; i++)
-            printf("%02u: name=%-32s\ttype=%04u\tTTL=%08u\tcontent=%-64s\n",
-                   i,
-                   zones->array[i].name,
-                   zones->array[i].type,
-                   zones->array[i].ttl,
-                   zones->array[i].content);
-    }
 }
