@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 
     printf("\n\n================ DNSD UNIT TESTS START ================\n\n");
 
-    test_display_header();
+    //test_display_header();
     test_parse_header();
     test_parse_and_write();
 
@@ -56,8 +56,8 @@ void test_parse_header(void)
     free_message_ptr(m);
 
     printf("\n\t>> Response packet\n");
-    packet = fopen("samples/dnsanswer.raw", "r");
     char buf2[125];
+    packet = fopen("samples/dnsanswer.raw", "r");
     fread(buf2, sizeof(char), 125, packet);
     fclose(packet);
     m = malloc(sizeof(message));
@@ -117,8 +117,6 @@ void test_parse_and_write(void)
     if (rsize != 125)
     {
         printf("rsize is %lu instead of 125\n", rsize);
-        display_header(&(m->header));
-        display_question(m->question);
         return;
     }
     if (memcmp(buf2, result, 125))
@@ -142,8 +140,6 @@ void test_parse_and_write(void)
     if (rsize != 322)
     {
         printf("rsize is %lu instead of 125\n", rsize);
-        display_header(&(m->header));
-        display_question(m->question);
         return;
     }
     if (memcmp(buf3, result, 322))
@@ -154,6 +150,7 @@ void test_parse_and_write(void)
         return;
     }
     free_message_ptr(m);
+    free(result);
 
     printf("\n-------- END test_parse_and_write\n\n");
 }
@@ -169,6 +166,9 @@ void test_qname_cmp2(void)
     printf("\t>>Case matches exactly... ");
     qname = string_to_qname("example.com");
     if (qname_cmp2(qname, str2) == NAME_EQUAL)
+    printf("\t>>Case equal... ");
+    qname = string_to_qname("example.com.");
+    if (qname_cmp2(qname, str2) == -1)
         printf("OK\n");
     else
     {
@@ -184,6 +184,8 @@ void test_qname_cmp2(void)
 
     printf("\t>>Case matching 2... ");
     qname = string_to_qname("nx.example.com");
+    printf("\t>>Case matching == 2... ");
+    qname = string_to_qname("nx.example.com.");
     if (qname_cmp2(qname, str2) == 2)
          printf("OK\n");
     else
@@ -216,6 +218,8 @@ void test_qname_cmp2(void)
 
     printf("\t>>Case no match... ");
     qname = string_to_qname("not-examplecom");
+    printf("\t>>Case no match... ");
+    qname = string_to_qname("not-example.com.");
     if (qname_cmp2(qname, str2) == 0)
           printf("OK\n");
     else
@@ -246,6 +250,7 @@ void test_soa_parser(void)
     };
 
     char *rdata = soa_parse(&z, &rsize);
+    char *rdata_base = rdata;
 
     printf("rsize: %u\n", rsize);
     printf("mname: '%s'\n", rdata);
@@ -259,5 +264,6 @@ void test_soa_parser(void)
     printf("expire: %d\n",  sr->expire);
     printf("minimum: %u\n", sr->minimum);
 
+    free(rdata_base);
     printf("\n-------- END test_soa_parser\n\n");
 }
