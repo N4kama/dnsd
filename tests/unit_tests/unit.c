@@ -257,9 +257,6 @@ void test_qname_cmp2(void)
     printf("\t>>Case matches exactly... ");
     qname = string_to_qname("example.com");
     if (qname_cmp2(qname, str2) == NAME_EQUAL)
-    printf("\t>>Case equal... ");
-    qname = string_to_qname("example.com.");
-    if (qname_cmp2(qname, str2) == -1)
         printf("OK\n");
     else
     {
@@ -275,8 +272,6 @@ void test_qname_cmp2(void)
 
     printf("\t>>Case matching 2... ");
     qname = string_to_qname("nx.example.com");
-    printf("\t>>Case matching == 2... ");
-    qname = string_to_qname("nx.example.com.");
     if (qname_cmp2(qname, str2) == 2)
          printf("OK\n");
     else
@@ -309,8 +304,6 @@ void test_qname_cmp2(void)
 
     printf("\t>>Case no match... ");
     qname = string_to_qname("not-examplecom");
-    printf("\t>>Case no match... ");
-    qname = string_to_qname("not-example.com.");
     if (qname_cmp2(qname, str2) == 0)
           printf("OK\n");
     else
