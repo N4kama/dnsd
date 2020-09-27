@@ -20,6 +20,8 @@ void test_qname_cmp2(void);
 void test_soa_parser(void);
 void test_qname_to_string(void);
 
+void test_count_dom(void);
+
 int main(int argc, char *argv[])
 {
     (void) argc;
@@ -38,7 +40,28 @@ int main(int argc, char *argv[])
     test_qname_cmp2();
     test_soa_parser();
 
+    test_count_dom();
+
     printf("================  DNSD UNIT TEST END   ================\n\n\n");
+}
+
+void test_count_dom(void)
+{
+    if (count_dom(".com") == 1)
+        printf(".com is OK\n");
+    else
+        printf(".com is FAIL\n");
+
+
+    if (count_dom("exemple.com") == 2)
+        printf("exemple.com is OK\n");
+    else
+        printf("exemple.com is FAIL\n");
+
+    if (count_dom("") == 0)
+        printf(" is OK\n");
+    else
+        printf(" is FAIL\n");
 }
 
 void test_strings_and_qnames(void)
@@ -244,7 +267,7 @@ void test_qname_cmp(void)
     printf("\t>>Case matching 2... ");
     str1 = "nx.example.com";
     if (qname_cmp(str1, str2) == 2)
-         printf("OK\n");
+        printf("OK\n");
     else
     {
         printf("FAIL\n");
@@ -256,7 +279,7 @@ void test_qname_cmp(void)
     printf("\t>>Case matching 1... ");
     str1 = "not-example.com";
     if (qname_cmp(str1, str2) == 1)
-          printf("OK\n");
+        printf("OK\n");
     else
     {
         printf("FAIL\n");
@@ -268,7 +291,7 @@ void test_qname_cmp(void)
     printf("\t>>Case no match... ");
     str1 = "not-examplecom";
     if (qname_cmp(str1, str2) == 0)
-          printf("OK\n");
+        printf("OK\n");
     else
     {
         printf("FAIL\n");
@@ -307,7 +330,7 @@ void test_qname_cmp2(void)
     printf("\t>>Case matching 2... ");
     qname = string_to_qname("nx.example.com");
     if (qname_cmp2(qname, str2) == 2)
-         printf("OK\n");
+        printf("OK\n");
     else
     {
         str1 = qname_to_string(qname);
@@ -323,7 +346,7 @@ void test_qname_cmp2(void)
     printf("\t>>Case matching 1... ");
     qname = string_to_qname("not-example.com");
     if (qname_cmp2(qname, str2) == 1)
-          printf("OK\n");
+        printf("OK\n");
     else
     {
         str1 = qname_to_string(qname);
@@ -339,7 +362,7 @@ void test_qname_cmp2(void)
     printf("\t>>Case no match... ");
     qname = string_to_qname("not-examplecom");
     if (qname_cmp2(qname, str2) == 0)
-          printf("OK\n");
+        printf("OK\n");
     else
     {
         str1 = qname_to_string(qname);
