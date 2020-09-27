@@ -51,39 +51,6 @@ void init_answer(message *m)
 
 
 /**
- * Modify *rdata and *rsize depending on type and zone given
- * Do not forget to free return pointer
- */
-char *rdata_from_type(int type, zone *z, uint16_t *rsize)
-{
-    char *rdata = NULL;
-    switch(type)
-    {
-        case TYPE_A:
-            break;
-        case TYPE_AAAA:
-            break;
-        case TYPE_CNAME:
-            break;
-        case TYPE_MX:
-            break;
-        case TYPE_NS:
-            break;
-        case TYPE_SOA:
-            break;
-        case TYPE_TXT:
-            *rsize = strlen(z->content);
-            rdata = malloc(*rsize);
-            strncpy(rdata, z->content, *rsize);
-            return rdata;
-    };
-
-    // Not handled
-    return NULL;
-}
-
-
-/**
  *
  *
  *
@@ -230,6 +197,7 @@ void build_ans(message *m, zone *z, int rr_type, int rcode)
             m->header.arcount += 1;
             break;
     };
+}
 
 /**
  * Parse SOA RDATA
@@ -317,5 +285,8 @@ char *rdata_from_type(int type, zone *z, uint16_t *rsize)
             strncpy(rdata, z->content, *rsize);
             return rdata;
     };
+
+    // Not handled
+    return NULL;
 }
 
