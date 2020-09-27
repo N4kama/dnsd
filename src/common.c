@@ -220,6 +220,7 @@ char *qname_to_string(char *qname)
     }
     name[-1] = 0;
     name = name_base;
+    qname = base;
 
     return name;
 }
@@ -442,8 +443,20 @@ char *string_to_qname(char *s)
     char *qname = NULL;
     size_t i;
     size_t j;
+    size_t nlabels = 0;
     size_t total_length = 0;
     char label_length = 0;
+
+    for (i = 0; s[i] != 0; i++)
+    {
+        total_length++;
+        if (s[i] == '.')
+            nlabels++;
+    }
+    if (s[i - 1] != '.')
+        nlabels++;
+
+    qname = calloc(total_length + nlabels + 1, sizeof(char));
 
     for (i = 0; s[i]; i++)
     {
@@ -453,15 +466,12 @@ char *string_to_qname(char *s)
         }
         else
         {
-            qname = realloc(qname, (total_length + 1) * sizeof(char));
             qname[i - label_length] = label_length;
             for (j = i - label_length; j < i; j++)
                 qname[j + 1] = s[j];
             label_length = 0;
         }
-        total_length++;
     }
-    qname = realloc(qname, (total_length + 2) * sizeof(char));
     qname[i - label_length] = label_length;
     for (j = i - label_length; j < i; j++)
         qname[j + 1] = s[j];
