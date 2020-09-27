@@ -168,7 +168,7 @@ void test_qname_cmp(void)
 
     printf("\t>>Case equal... ");
     qname = string_to_qname("example.com");
-    if (qname_cmp2(qname, str2) == -1)
+    if (qname_cmp2(qname, str2) == NAME_EQUAL)
         printf("OK\n");
     else
     {
