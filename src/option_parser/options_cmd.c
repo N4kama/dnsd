@@ -21,8 +21,9 @@ dnsd_err my_help(int argc, char **argv, int *i)
     if ((argc != 0 || argv[*i] != NULL))
     {
         printf("dnsd, version %.1f\n", VERSION);
-        printf("Usage:  dnsd [option] ...\n");
-        printf("        dnsd [option] [file] ...\n");
+        printf("Usage:  ./dnsd [option] ...\n");
+        printf("        ./dnsd [option] -f file ...\n");
+        printf("        ./dnsd : Will start the binary with -f /etc/dnsd/dnsd.zone\n");
         printf("Options:\n");
         printf("\t--help\n");
         printf("\t--version\n");
@@ -37,8 +38,9 @@ dnsd_err my_help(int argc, char **argv, int *i)
 
 void my_help_error(void)
 {
-    fprintf(stderr, "Usage: dnsd [option] ...\n");
-    fprintf(stderr, "       dnsd [option] [file] ...\n");
+    fprintf(stderr, "Usage: ./dnsd [option] ...\n");
+    fprintf(stderr, "       ./dnsd [option] -f file ...\n");
+    fprintf(stderr, "       ./dnsd : Will start the binary with -f /etc/dnsd/dnsd.zone\n");
     fprintf(stderr, "Options:\n");
     fprintf(stderr, "\t--help\n");
     fprintf(stderr, "\t--version\n");
