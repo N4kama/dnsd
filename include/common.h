@@ -81,6 +81,7 @@ char *qname_to_string(char *qname);
 char *string_to_qname(char *s);
 void display_header(header *h);
 void display_question(question *q);
+void display_message(message *m);
 
 #endif
 

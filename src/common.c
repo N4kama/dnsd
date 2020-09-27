@@ -45,16 +45,36 @@ void display_question(question *q)
     free(name);
 }
 
-void display_rr(resource_record rr)
+void display_rr(resource_record *rr)
 {
-    printf("name: %s\n", rr.name);
-    printf("type: %u\n", rr.type);
-    printf("clss: %u\n", rr.clss);
-    printf("ttl: %u\n", rr.ttl);
-    printf("rdlength: %u\n", rr.rdlength);
-    printf("data: %s\n", rr.rdata);
+    printf("name: %s\n", rr->name);
+    printf("type: %u\n", rr->type);
+    printf("clss: %u\n", rr->clss);
+    printf("ttl: %u\n", rr->ttl);
+    printf("rdlength: %u\n", rr->rdlength);
+    printf("data: %s\n", rr->rdata);
 }
 
+void display_message(message *m)
+{
+    size_t i;
+
+    puts("HEADER");
+    display_header(&(m->header));
+    puts("QUESTIONS");
+    for (i = 0; i < m->header.qdcount; i++)
+        display_question((m->question + i));
+    puts("ANSWER RRs");
+    for (i = 0; i < m->header.ancount; i++)
+        display_rr((m->answer + i));
+    puts("AUTHORITY RRs");
+    for (i = 0; i < m->header.nscount; i++)
+        display_rr((m->authority + i));
+    puts("ADDITIONAL RRs");
+    for (i = 0; i < m->header.arcount; i++)
+        display_rr((m->additional + i));
+
+}
 
 // Parse a dns message (query or answer)
 int parse_message(char *buffer, message *msg)
@@ -93,7 +113,6 @@ int parse_message(char *buffer, message *msg)
         q[i].qclass = ntohs(*(uint16_t *)content);
         content += sizeof(uint16_t);
     }
-    printf("%x\n", *content);
 
 
     an = calloc(msg->header.ancount, sizeof(resource_record));
