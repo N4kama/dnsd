@@ -145,6 +145,9 @@ int qname_cmp(char *qname, char *str2)
     return matching;
 }
 
+/**
+ * Parse SOA RDATA
+ */
 char *soa_parse(zone *soa, uint16_t *rsize)
 {
     char mname[MAX_NAME_LENGTH + 1];
@@ -183,6 +186,18 @@ char *soa_parse(zone *soa, uint16_t *rsize)
 }
 
 /**
+ * Parse A RDATA
+ */
+char *a_parse(zone *a, uint16_t *rsize)
+{
+    *rsize = sizeof(uint32_t);
+    char *rdata = malloc(*rsize);
+    inet_pton(AF_INET, z->content, rdata);
+
+    return rdata;
+}
+
+/**
  * Modify *rdata and *rsize depending on type and zone given
  * Do not forget to free return pointer
  */
@@ -192,9 +207,9 @@ char *rdata_from_type(int type, zone *z, uint16_t *rsize)
     switch(type)
     {
         case TYPE_A:
-            break;
+            return a_parse(z, rsize);
         case TYPE_AAAA:
-            break;
+            return 
         case TYPE_CNAME:
             break;
         case TYPE_MX:
