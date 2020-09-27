@@ -29,16 +29,32 @@
 
     I. Presentation
 
-    DNSD is an implementation of an authorative DNS written in C.
+    dnsd is a fast, secure and lightweight authoritative
+    DNS daemon written in pure C.
+
+    It was created in less than 2 days by 6 very dangerous people.
 
     II. Installation
 
-    `$ make`
+    To create the binary, make sure you have `make` installed
+    and run :
+
+    $ make
+    OR
+    $ make install
 
     III. Usage
 
-    `$ ./dnsd <PATH_TO_ZONE_FILE>`
+    You can simply run the binary (in sudo mode) with a configuration file:
+
+    $ sudo ./dnsd -f <PATH_TO_ZONE_FILE>
+
+    For more details on the options, check the man page with :
+    
+    $ man doc/dnsd.8
 
     IV. Uninstall
 
-    `$ make clean`
+    Remove all object files and the binary with :
+
+    $ make clean
