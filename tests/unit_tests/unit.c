@@ -1,17 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "colors.h"
+#include "common.h"
 #include "error.h"
 #include "option_parser.h"
+#include "zone_file_parser.h"
 #include "process_query.h"
 #include "server.h"
-#include "zone_file_parser.h"
-#include "common.h"
-#include "colors.h"
 
 void test_display_header(void);
 void test_parse_header(void);
 void test_parse_and_write(void);
+
+void test_qname_cmp(void);
 void test_soa_parser(void);
 
 int main(int argc, char *argv[])
@@ -19,36 +21,41 @@ int main(int argc, char *argv[])
     (void) argc;
     (void) argv;
 
-    printf("DNSD TEST SUITE START\n");
+    printf("\n\n================ DNSD UNIT TESTS START ================\n\n");
 
     test_display_header();
     test_parse_header();
     test_parse_and_write();
 
+    test_qname_cmp();
     test_soa_parser();
+
+    printf("================  DNSD UNIT TEST END   ================\n\n\n");
 }
 
 void test_display_header(void)
 {
+    printf("-------- BEGIN test_display_header\n\n");
     header h;
     display_header(&h);
+    printf("\n-------- END test_display_header\n\n");
 }
 
 void test_parse_header(void)
 {
-    puts("\n--- BEGIN test_parse_header---\n");
-    puts(" -> Query packet");
+    printf("-------- BEGIN test_parse_header\n\n");
+
+    printf("\t>> Query packet\n");
     char buf[32];
     FILE *packet = fopen("samples/dnsquery.raw", "r");
-    fread(buf,sizeof(char), 32, packet);
+    fread(buf, sizeof(char), 32, packet);
     fclose(packet);
     message *m = malloc(sizeof(message));
     parse_message(buf, m);
     display_message(m);
     free_message_ptr(m);
-    puts("");
 
-    puts(" -> Response packet");
+    printf("\n\t>> Response packet\n");
     packet = fopen("samples/dnsanswer.raw", "r");
     char buf2[125];
     fread(buf2, sizeof(char), 125, packet);
@@ -57,9 +64,8 @@ void test_parse_header(void)
     parse_message(buf2, m);
     display_message(m);
     free_message_ptr(m);
-    puts("");
 
-    puts(" -> SOA responose");
+    printf("\n\t>> SOA response\n");
     char buf3[322];
     packet = fopen("samples/killme.raw", "r");
     fread(buf3, sizeof(char), 322, packet);
@@ -68,15 +74,18 @@ void test_parse_header(void)
     parse_message(buf3, m);
     display_message(m);
     free_message_ptr(m);
+
+    printf("\n-------- END test_parse_header\n\n");
 }
 
 void test_parse_and_write(void)
 {
-    puts("\n--- BEGIN test_parse_and_write---\n");
-    puts(" -> Query packet");
+    printf("-------- BEGIN test_parse_and_write\n\n");
+
+    printf("\t>> Query packet\n");
     FILE *packet = fopen("samples/dnsquery.raw", "r");
     char buf[32];
-    fread(buf,sizeof(char), 32, packet);
+    fread(buf, sizeof(char), 32, packet);
     fclose(packet);
     message *m = malloc(sizeof(message));
     parse_message(buf, m);
@@ -89,17 +98,15 @@ void test_parse_and_write(void)
     }
     if (memcmp(buf, result, 32))
     {
-        puts("result data did not match input data");
+        printf("result data did not match input data\n");
         for (size_t i = 0; i < 32; i++)
-        {
             printf("0x%x     0x%x\n", buf[i], result[i]);
-        }
         return;
     }
     free_message_ptr(m);
     free(result);
 
-    puts(" -> Response packet");
+    printf("\n\t>> Response packet\n");
     packet = fopen("samples/dnsanswer.raw", "r");
     char buf2[125];
     fread(buf2, sizeof(char), 125, packet);
@@ -116,17 +123,15 @@ void test_parse_and_write(void)
     }
     if (memcmp(buf2, result, 125))
     {
-        puts("result data did not match input data");
+        printf("result data did not match input data\n");
         for (size_t i = 0; i < 125; i++)
-        {
-                printf("%lu: 0x%x     0x%x\n", i, buf2[i], result[i]);
-        }
+            printf("%lu: 0x%x     0x%x\n", i, buf2[i], result[i]);
         return;
     }
     free_message_ptr(m);
     free(result);
 
-    puts(" -> SOA responose");
+    printf("\n\t>> SOA response\n");
     char buf3[322];
     packet = fopen("samples/killme.raw", "r");
     fread(buf3, sizeof(char), 322, packet);
@@ -143,21 +148,79 @@ void test_parse_and_write(void)
     }
     if (memcmp(buf3, result, 322))
     {
-        puts("result data did not match input data");
+        printf("result data did not match input data\n");
         for (size_t i = 0; i < 322; i++)
-        {
-                printf("%lu: 0x%x     0x%x\n", i, buf3[i], result[i]);
-        }
+            printf("%lu: 0x%x     0x%x\n", i, buf3[i], result[i]);
         return;
     }
     free_message_ptr(m);
 
-    puts("test_parse_and_write OK");
+    printf("\n-------- END test_parse_and_write\n\n");
+}
+
+void test_qname_cmp(void)
+{
+    printf("-------- BEGIN test_qname_cmp\n\n");
+
+    char *qname;
+    char *str1;
+    char *str2 = "example.com";
+
+    printf("\t>>Case equal... ");
+    qname = string_to_qname("example.com");
+    if (qname_cmp(qname, str2) == -1)
+        printf("OK\n");
+    else
+    {
+        str1 = qname_to_string(qname);
+        printf("FAIL\n");
+        printf("\t\tqname: %s\n", qname);
+        printf("\t\tqname_to_string: %s\n", str1);
+        printf("\t\tstr2: %s\n", str2);
+        printf("\t\tqname_cmp = %d\n", qname_cmp(qname, str2));
+        free(str1);
+    }
+    free(qname);
+
+    printf("\t>>Case matching == 2... ");
+    qname = string_to_qname("nx.example.com");
+    if (qname_cmp(qname, str2) == 2)
+         printf("OK\n");
+    else
+    {
+        str1 = qname_to_string(qname);
+        printf("FAIL\n");
+        printf("\t\tqname: %s\n", qname);
+        printf("\t\tqname_to_string: %s\n", str1);
+        printf("\t\tstr2: %s\n", str2);
+        printf("\t\tqname_cmp = %d\n", qname_cmp(qname, str2));
+        free(str1);
+    }
+    free(qname);
+
+    printf("\t>>Case no match... ");
+    qname = string_to_qname("not-example.com");
+    if (qname_cmp(qname, str2) == 0)
+          printf("OK\n");
+    else
+    {
+        str1 = qname_to_string(qname);
+        printf("FAIL\n");
+        printf("\t\tqname: %s\n", qname);
+        printf("\t\tqname_to_string: %s\n", str1);
+        printf("\t\tstr2: %s\n", str2);
+        printf("\t\tqname_cmp = %d\n", qname_cmp(qname, str2));
+        free(str1);
+    }
+    free(qname);
+
+    printf("\n-------- END test_qname_cmp\n\n");
 }
 
 void test_soa_parser(void)
 {
-    printf("------ Testing SOA RDATA parser ------\n\n");
+    printf("-------- BEGIN test_soa_parser\n\n");
+
     uint16_t rsize;
     zone z = {
         .name       = "example.com",
@@ -167,7 +230,7 @@ void test_soa_parser(void)
     };
 
     char *rdata = soa_parse(&z, &rsize);
-    printf("\n");
+
     printf("rsize: %u\n", rsize);
     printf("mname: '%s'\n", rdata);
     rdata += strlen(rdata) + 1;
@@ -179,5 +242,6 @@ void test_soa_parser(void)
     printf("retry: %d\n",   sr->retry);
     printf("expire: %d\n",  sr->expire);
     printf("minimum: %u\n", sr->minimum);
-    printf("\n------   SOA RDATA parser OK    ------\n");
+
+    printf("\n-------- END test_soa_parser\n\n");
 }

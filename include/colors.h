@@ -1,5 +1,5 @@
-#ifndef _COLORS_H_
-#define _COLORS_H_
+#ifndef COLORS_H
+#define COLORS_H
 
 #define BGBLACK     "\[\e[40m\]"
 #define RED         "\[\e[0;31m\]"
@@ -25,4 +25,4 @@
 #define BGWHITE     "\[\e[1;37m\]"
 #define RESET       "\[\e[0m\]"
 
-#endif /* ! _COLORS_H_ */
+#endif /* ! COLORS_H */
