@@ -199,7 +199,10 @@ void build_ans(message *m, zone *z, int rr_type, int rcode)
 {
 
     resource_record *ans = malloc(sizeof(resource_record));
-    ans->name = m->question->qname;
+
+    char *name;
+    read_name(m->question->qname, &name);
+    ans->name = name;
     ans->type = m->question->qtype;
     ans->clss = m->question->qclass;
     ans->ttl = z->ttl;
