@@ -145,6 +145,42 @@ int qname_cmp(char *qname, char *str2)
     return matching;
 }
 
+char *soa_parse(zone *soa, uint16_t *rsize)
+{
+    char mname[MAX_NAME_LENGTH + 1];
+    char rname[MAX_NAME_LENGTH + 1];
+    soa_rdata sr;
+
+    sscanf(soa->content, "%253s %253s %u %d %d %d %u",
+           mname,
+           rname,
+           &sr.serial,
+           &sr.refresh,
+           &sr.retry,
+           &sr.expire,
+           &sr.minimum);
+
+    printf("%s %s %u %d %d %d %u",
+           mname,
+           rname,
+           sr.serial,
+           sr.refresh,
+           sr.retry,
+           sr.expire,
+           sr.minimum);
+
+    uint16_t mname_len = strlen(mname);
+    uint16_t rname_len = strlen(rname);
+    uint16_t sum_len = mname_len + 1 + rname_len + 1;
+    *rsize = sum_len + sizeof(soa_rdata);
+
+    char *rdata = malloc(*rsize);
+    strcpy(rdata, mname);
+    strcpy(rdata + mname_len + 1, rname);
+    memcpy(rdata + sum_len, &sr, sizeof(soa_rdata));
+
+    return rdata;
+}
 
 /**
  * Modify *rdata and *rsize depending on type and zone given
@@ -166,7 +202,7 @@ char *rdata_from_type(int type, zone *z, uint16_t *rsize)
         case TYPE_NS:
             break;
         case TYPE_SOA:
-            break;
+            return soa_parse(z, rsize);
         case TYPE_TXT:
             *rsize = strlen(z->content);
             rdata = malloc(*rsize);
