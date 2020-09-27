@@ -23,7 +23,7 @@ dnsd_err handle_communication(zone_array *p_zones, dns_sock clientSock)
     char *response;          /* request buffer after parsing */
     uint64_t response_size;  /* request buffer length after parsing */
 
-    if (clientSock.sin_family == AF_INET6)
+    if (clientSock.type == SOCK_DGRAM)
     {
         if (recvfrom(clientSock.socketfd, request, sizeof(request), 0, &client, &len) < 0)
         {
@@ -40,16 +40,16 @@ dnsd_err handle_communication(zone_array *p_zones, dns_sock clientSock)
 
     response = process_request(request, &response_size, p_zones);
 
-    if (clientSock.sin_family == AF_INET6)
+    if (clientSock.type == SOCK_DGRAM)
     {
-        if (sendto(clientSock.socketfd, response, sizeof(response), 0, &client, len) < 0)
+        if (sendto(clientSock.socketfd, response, response_size, 0, &client, len) < 0)
         {
             return ERR_SOCK_RECV;
         }
     }
     else
     {
-        if (send(clientSock.socketfd, response, sizeof(response), 0) < 0)
+        if (send(clientSock.socketfd, response, response_size, 0) < 0)
         {
             return ERR_SOCK_RECV;
         }
