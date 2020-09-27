@@ -198,6 +198,18 @@ char *a_parse(zone *a, uint16_t *rsize)
 }
 
 /**
+ * Parse AAAA RDATA
+ */
+char *aaaa_parse(zone *a, uint16_t *rsize)
+{
+    *rsize = 16 * sizeof(uint8_t);
+    char *rdata = malloc(*rsize);
+    inet_pton(AF_INET6, z->content, rdata);
+
+    return rdata;
+}
+
+/**
  * Modify *rdata and *rsize depending on type and zone given
  * Do not forget to free return pointer
  */
@@ -209,15 +221,10 @@ char *rdata_from_type(int type, zone *z, uint16_t *rsize)
         case TYPE_A:
             return a_parse(z, rsize);
         case TYPE_AAAA:
-            return 
-        case TYPE_CNAME:
-            break;
-        case TYPE_MX:
-            break;
-        case TYPE_NS:
-            break;
+            return aaaa_parse(z, rsize);
         case TYPE_SOA:
             return soa_parse(z, rsize);
+        case TYPE_CNAME:
         case TYPE_TXT:
             *rsize = strlen(z->content);
             rdata = malloc(*rsize);
