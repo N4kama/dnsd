@@ -465,7 +465,9 @@ void test_process_request(void)
     zone_array *zones;
     zone_parse("samples/dnsd.zone", &zones);
 
-    process_request(buf, &out_size, zones);
+    char *out = process_request(buf, &out_size, zones);
 
+
+    free(out);
     zone_free(zones);
 }

@@ -126,27 +126,36 @@ int parse_message(char *buffer, message *msg)
     }
 
 
-    an = calloc(msg->header.ancount, sizeof(resource_record));
-    if (an == NULL)
-        return ERR_NOMEM;
+    if (msg->header.ancount > 0)
+    {
+        an = calloc(msg->header.ancount, sizeof(resource_record));
+        if (an == NULL)
+            return ERR_NOMEM;
+    }
 
     for (int i = 0; i < msg->header.ancount; i++)
     {
         an[i] = parse_rr(&content);
     }
 
-    ns = calloc(msg->header.nscount, sizeof(resource_record));
-    if (ns == NULL)
-        return ERR_NOMEM;
+    if (msg->header.nscount > 0)
+    {
+        ns = calloc(msg->header.nscount, sizeof(resource_record));
+        if (ns == NULL)
+            return ERR_NOMEM;
+    }
 
     for (int i = 0; i < msg->header.nscount; i++)
     {
         ns[i] = parse_rr(&content);
     }
 
-    ar = calloc(msg->header.arcount, sizeof(resource_record));
-    if (ar == NULL)
-        return ERR_NOMEM;
+    if (msg->header.arcount > 0)
+    {
+        ar = calloc(msg->header.arcount, sizeof(resource_record));
+        if (ar == NULL)
+            return ERR_NOMEM;
+    }
 
     for (int i = 0; i < msg->header.arcount; i++)
     {
