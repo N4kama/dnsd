@@ -89,6 +89,10 @@ int qname_cmp(char *str1, char *str2)
 
     if (l1 == 0 && l2 == 0)
         return NAME_EQUAL;
+    if (l1 == 0 && str2[l2 - 1] == '.')
+        matching++;
+    if (l2 == 0 && str1[l1 - 1] == '.')
+        matching++;
 
     return matching;
 }
