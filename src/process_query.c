@@ -69,6 +69,12 @@ int qname_cmp(char *str1, char *str2)
     uint64_t l1 = strlen(str1) - 1;
     uint64_t l2 = strlen(str2) - 1;
 
+    while (str1[l1] == '.')
+        l1--;
+
+    while (str2[l2] == '.')
+        l2--;
+
     uint64_t matching = 0;
     for (;l1 != 0 && l2 != 0;)
     {
