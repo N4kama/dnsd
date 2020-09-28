@@ -1,0 +1,2 @@
+example.com;SOA;3600;ns0.example.com. postmaster.example.com. 2018111601 86400 3600 604800 3600
+www.example.com;AAAA;7200;127.0.0.1
