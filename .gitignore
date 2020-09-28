@@ -5,3 +5,6 @@
 dnsd
 unit
 *.o
+
+# Crashs
+vgcore.*
